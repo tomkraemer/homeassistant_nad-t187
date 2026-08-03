@@ -6,10 +6,13 @@
 [![Maintainer][maintainer-shield]][maintainer]
 [![Home Assistant][homeassistant-shield]][homeassistant]
 [![HACS][hacs-shield]][hacs]  
+
+<!-- 
 [![GitHub Sponsors][github-shield]][github]
 [![PayPal][paypal-shield]][paypal]
 [![BuyMeCoffee][buymecoffee-shield]][buymecoffee]
 [![Patreon][patreon-shield]][patreon]
+-->
 
 ## Introduction
 
@@ -70,7 +73,7 @@ request (preferred) or issue with the file attached.
 
 More on translating custom integrations can be found
 [here](https://developers.home-assistant.io/docs/internationalization/custom_integration/).
-
+<!-- 
 ### Star this integration
 
 Help other Home Assistant and NAD users find this integration by starring this GitHub
@@ -101,7 +104,7 @@ What can be done in one hour:
 What takes more time:
 - Depending on the severity I might be able to help you with recovering your crashed Home Assistant
 - Support for Home Assistant Integration developers
-<!-- 
+
 ### Hire me
 
 If you would like to have a Home Assistant integration developed for your product or are in need
@@ -109,12 +112,12 @@ of a freelance Python developer for your project please contact me, you can find
 on [my GitHub profile](https://github.com/rrooggiieerr).
 -->
 [python-shield]: https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54
-[releases]: https://github.com/rrooggiieerr/homeassistant-nad/releases
-[releases-shield]: https://img.shields.io/github/v/release/rrooggiieerr/homeassistant-nad?style=for-the-badge
+[releases]: https://github.com/tomkraemer/homeassistant_nad-t187/releases
+[releases-shield]: https://img.shields.io/github/v/release/tomkraemer/homeassistant_nad-t187?style=for-the-badge
 [license]: ./LICENSE
-[license-shield]: https://img.shields.io/github/license/rrooggiieerr/homeassistant-nad?style=for-the-badge
-[maintainer]: https://github.com/rrooggiieerr
-[maintainer-shield]: https://img.shields.io/badge/MAINTAINER-%40rrooggiieerr-41BDF5?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/tomkraemer/homeassistant_nad-t187?style=for-the-badge
+[maintainer]: https://github.com/tomkraemer
+[maintainer-shield]: https://img.shields.io/badge/MAINTAINER-%40tomkraemer-41BDF5?style=for-the-badge
 [homeassistant]: https://www.home-assistant.io/
 [homeassistant-shield]: https://img.shields.io/badge/home%20assistant-%2341BDF5.svg?style=for-the-badge&logo=home-assistant&logoColor=white
 [hacs]: https://hacs.xyz/
