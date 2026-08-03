@@ -120,7 +120,8 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
                 # instead they only support stepping the volume up or down
                 self._attr_volume_level = None
 
-            source = int(self.coordinator.data.get(self.zone + ".Source"))
+            # source = int(self.coordinator.data.get(self.zone + ".Source"))
+            source = self.coordinator.data.get(self.zone + ".Source")
             self._attr_source = self._source_dict.get(source)
 
         self.async_write_ha_state()
