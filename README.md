@@ -1,6 +1,6 @@
 # Home Assistant integration for NAD receivers
 
-![Python][python-shield]
+[![Python][python-shield]
 [![GitHub Release][releases-shield]][releases]
 [![Licence][license-shield]][license]
 [![Maintainer][maintainer-shield]][maintainer]
