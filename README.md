@@ -27,7 +27,7 @@ to network bridges like [esp-link](https://github.com/jeelabs/esp-link).
 The recommended way to install this Home Assistant integration is by using [HACS][hacs].
 Click the following button to open the integration directly on the HACS integration page.
 
-[![Install NAD from HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rrooggiieerr&repository=homeassistant-nad&category=integration)
+[![Install NAD from HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tomkraemer&repository=homeassistant-nad&category=integration)
 
 Or follow these instructions:
 
@@ -101,7 +101,7 @@ What can be done in one hour:
 What takes more time:
 - Depending on the severity I might be able to help you with recovering your crashed Home Assistant
 - Support for Home Assistant Integration developers
-
+<!-- 
 ### Hire me
 
 If you would like to have a Home Assistant integration developed for your product or are in need
@@ -126,4 +126,5 @@ on [my GitHub profile](https://github.com/rrooggiieerr).
 [github]: https://github.com/sponsors/rrooggiieerr
 [github-shield]: https://img.shields.io/badge/sponsor-30363D?style=for-the-badge&logo=GitHub-Sponsors&logoColor=#EA4AAA
 [patreon]: https://www.patreon.com/seekingtheedge/creators
-[patreon-shield]: https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white
+[patreon-shield]: https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white 
+-->
