@@ -1,6 +1,6 @@
 # Home Assistant integration for NAD receivers
 
-[![Python][python-shield]
+![Python][python-shield]
 [![GitHub Release][releases-shield]][releases]
 [![Licence][license-shield]][license]
 [![Maintainer][maintainer-shield]][maintainer]
@@ -107,7 +107,7 @@ What takes more time:
 If you would like to have a Home Assistant integration developed for your product or are in need
 of a freelance Python developer for your project please contact me, you can find my email address
 on [my GitHub profile](https://github.com/rrooggiieerr).
-
+-->
 [python-shield]: https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54
 [releases]: https://github.com/rrooggiieerr/homeassistant-nad/releases
 [releases-shield]: https://img.shields.io/github/v/release/rrooggiieerr/homeassistant-nad?style=for-the-badge
@@ -127,4 +127,4 @@ on [my GitHub profile](https://github.com/rrooggiieerr).
 [github-shield]: https://img.shields.io/badge/sponsor-30363D?style=for-the-badge&logo=GitHub-Sponsors&logoColor=#EA4AAA
 [patreon]: https://www.patreon.com/seekingtheedge/creators
 [patreon-shield]: https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white 
--->
+
