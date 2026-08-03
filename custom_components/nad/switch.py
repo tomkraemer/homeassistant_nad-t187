@@ -78,14 +78,24 @@ async def async_setup_entry(
             entity_category=EntityCategory.CONFIG,
             entity_registry_enabled_default=False,
         ),
-        SwitchEntityDescription(key="Main.Speaker.Sub", name="Subwoofer"),
         SwitchEntityDescription(
-            key="Main.SpeakerA", name="Speakers A", icon="mdi:speaker-multiple"
+            key="Main.Speaker.Sub", 
+            name="Subwoofer"
         ),
         SwitchEntityDescription(
-            key="Main.SpeakerB", name="Speakers B", icon="mdi:speaker-multiple"
+            key="Main.SpeakerA", 
+            name="Speakers A", 
+            icon="mdi:speaker-multiple"
         ),
-        SwitchEntityDescription(key="Main.ToneDefeat", name="Tone Defeat"),
+        SwitchEntityDescription(
+            key="Main.SpeakerB", 
+            name="Speakers B", 
+            icon="mdi:speaker-multiple"
+        ),
+        SwitchEntityDescription(
+            key="Main.ToneDefeat", 
+            name="Tone Defeat"
+        ),
         SwitchEntityDescription(
             key="Tuner.FM.Mute",
             name="Tuner FM Mute",
