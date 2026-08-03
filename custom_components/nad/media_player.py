@@ -61,7 +61,7 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
     _attr_name = None
     _attr_device_class = MediaPlayerDeviceClass.RECEIVER
 
-    zone = "Main"
+    # zone = "Main"
 
     def __init__(self, coordinator: NADReceiverCoordinator):
         """Initialize the NAD Receiver device."""
@@ -298,3 +298,8 @@ class NADZone2(NAD):
     )
 
     zone = "Zone2"
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        super()._handle_coordinator_update()
