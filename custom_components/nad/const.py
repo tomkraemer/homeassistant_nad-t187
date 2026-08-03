@@ -9,7 +9,7 @@ CONF_TYPE_TELNET: Final = "Telnet"
 CONF_TYPE_TCP: Final = "TCP"
 
 CONF_SERIAL_PORT: Final = "serial_port"  # for NADReceiver
-CONF_DEFAULT_PORT: Final = 53
+CONF_DEFAULT_PORT: Final = 23
 
 CONF_MIN_VOLUME: Final = "min_volume"
 CONF_MAX_VOLUME: Final = "max_volume"
