@@ -11,7 +11,7 @@ Diese Sammlung enthält **praktische Code-Snippets** und **Entwicklungsmuster** 
 ### 1. Coordinator-Pattern
 
 Der **NADReceiverCoordinator** ist das zentrale Element, das alle Kommunikation verwaltet:
-
+ 
 ```python
 class NADReceiverCoordinator(DataUpdateCoordinator):
     """Zentraler Daten- und Verbindungsmanager."""
