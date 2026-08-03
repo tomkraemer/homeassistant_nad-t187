@@ -30,78 +30,78 @@ async def async_setup_entry(
     # await coordinator.async_config_entry_first_refresh()
 
     entity_descriptions = [
-        SwitchEntityDescription(
-            key="Main.Dimmer",
-            name="Front VFD Dimmer",
-            icon="mdi:text-short",
-            entity_category=EntityCategory.CONFIG,
-        ),
-        SwitchEntityDescription(
-            key="Main.Dolby.Panorama",
-            name="Dolby Panorama",
-            icon="mdi:dolby",
-            entity_category=EntityCategory.CONFIG,
-            entity_registry_enabled_default=False,
-        ),
-        SwitchEntityDescription(
-            key="Main.EnhancedBass",
-            name="Enhanced Bass",
-            entity_category=EntityCategory.CONFIG,
-        ),
-        SwitchEntityDescription(
-            key="Main.EnhancedStereo.Back",
-            name="Enhanced Stereo Back",
-            entity_category=EntityCategory.CONFIG,
-            entity_registry_enabled_default=False,
-        ),
-        SwitchEntityDescription(
-            key="Main.EnhancedStereo.Center",
-            name="Enhanced Stereo Center",
-            entity_category=EntityCategory.CONFIG,
-            entity_registry_enabled_default=False,
-        ),
-        SwitchEntityDescription(
-            key="Main.EnhancedStereo.Front",
-            name="Enhanced Stereo Front",
-            entity_category=EntityCategory.CONFIG,
-            entity_registry_enabled_default=False,
-        ),
-        SwitchEntityDescription(
-            key="Main.EnhancedStereo.Surround",
-            name="Enhanced Stereo Surround",
-            entity_category=EntityCategory.CONFIG,
-            entity_registry_enabled_default=False,
-        ),
-        SwitchEntityDescription(
-            key="Main.OSD.TempDisplay",
-            name="OSD Temp Display",
-            entity_category=EntityCategory.CONFIG,
-            entity_registry_enabled_default=False,
-        ),
-        SwitchEntityDescription(
-            key="Main.Speaker.Sub", 
-            name="Subwoofer"
-        ),
-        SwitchEntityDescription(
-            key="Main.SpeakerA", 
-            name="Speakers A", 
-            icon="mdi:speaker-multiple"
-        ),
-        SwitchEntityDescription(
-            key="Main.SpeakerB", 
-            name="Speakers B", 
-            icon="mdi:speaker-multiple"
-        ),
-        SwitchEntityDescription(
-            key="Main.ToneDefeat", 
-            name="Tone Defeat"
-        ),
-        SwitchEntityDescription(
-            key="Tuner.FM.Mute",
-            name="Tuner FM Mute",
-            icon="mdi:radio-fm",
-            entity_registry_enabled_default=False,
-        ),
+        # SwitchEntityDescription(
+        #     key="Main.Dimmer",
+        #     name="Front VFD Dimmer",
+        #     icon="mdi:text-short",
+        #     entity_category=EntityCategory.CONFIG,
+        # ),
+        # SwitchEntityDescription(
+        #     key="Main.Dolby.Panorama",
+        #     name="Dolby Panorama",
+        #     icon="mdi:dolby",
+        #     entity_category=EntityCategory.CONFIG,
+        #     entity_registry_enabled_default=False,
+        # ),
+        # SwitchEntityDescription(
+        #     key="Main.EnhancedBass",
+        #     name="Enhanced Bass",
+        #     entity_category=EntityCategory.CONFIG,
+        # ),
+        # SwitchEntityDescription(
+        #     key="Main.EnhancedStereo.Back",
+        #     name="Enhanced Stereo Back",
+        #     entity_category=EntityCategory.CONFIG,
+        #     entity_registry_enabled_default=False,
+        # ),
+        # SwitchEntityDescription(
+        #     key="Main.EnhancedStereo.Center",
+        #     name="Enhanced Stereo Center",
+        #     entity_category=EntityCategory.CONFIG,
+        #     entity_registry_enabled_default=False,
+        # ),
+        # SwitchEntityDescription(
+        #     key="Main.EnhancedStereo.Front",
+        #     name="Enhanced Stereo Front",
+        #     entity_category=EntityCategory.CONFIG,
+        #     entity_registry_enabled_default=False,
+        # ),
+        # SwitchEntityDescription(
+        #     key="Main.EnhancedStereo.Surround",
+        #     name="Enhanced Stereo Surround",
+        #     entity_category=EntityCategory.CONFIG,
+        #     entity_registry_enabled_default=False,
+        # ),
+        # SwitchEntityDescription(
+        #     key="Main.OSD.TempDisplay",
+        #     name="OSD Temp Display",
+        #     entity_category=EntityCategory.CONFIG,
+        #     entity_registry_enabled_default=False,
+        # ),
+        # SwitchEntityDescription(
+        #     key="Main.Speaker.Sub", 
+        #     name="Subwoofer"
+        # ),
+        # SwitchEntityDescription(
+        #     key="Main.SpeakerA", 
+        #     name="Speakers A", 
+        #     icon="mdi:speaker-multiple"
+        # ),
+        # SwitchEntityDescription(
+        #     key="Main.SpeakerB", 
+        #     name="Speakers B", 
+        #     icon="mdi:speaker-multiple"
+        # ),
+        # SwitchEntityDescription(
+        #     key="Main.ToneDefeat", 
+        #     name="Tone Defeat"
+        # ),
+        # SwitchEntityDescription(
+        #     key="Tuner.FM.Mute",
+        #     name="Tuner FM Mute",
+        #     icon="mdi:radio-fm",
+        #     entity_registry_enabled_default=False,
+        # ),
     ]
 
     entities = []

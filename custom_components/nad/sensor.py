@@ -31,43 +31,43 @@ async def async_setup_entry(
     # await coordinator.async_config_entry_first_refresh()
 
     entity_descriptions = [
-        SensorEntityDescription(
-            key="DSP.Version", name="DSP Version", entity_registry_enabled_default=False
-        ),
-        SensorEntityDescription(
-            key="Tuner.DAB.DLS", name="DAB DLS", entity_registry_enabled_default=False
-        ),
-        SensorEntityDescription(
-            key="Tuner.DAB.Service",
-            name="DAB Service",
-            entity_registry_enabled_default=False,
-        ),
-        SensorEntityDescription(
-            key="Tuner.FM.RDSName",
-            name="FM RDS Name",
-            entity_registry_enabled_default=False,
-        ),
-        SensorEntityDescription(
-            key="Tuner.FM.RDSText",
-            name="FM RDS Text",
-            entity_registry_enabled_default=False,
-        ),
-        SensorEntityDescription(
-            key="Tuner.XM.ChannelName",
-            name="XM Channel Name",
-            entity_registry_enabled_default=False,
-        ),
-        SensorEntityDescription(
-            key="Tuner.XM.Name", name="XM Name", entity_registry_enabled_default=False
-        ),
-        SensorEntityDescription(
-            key="Tuner.XM.Title", name="XM Title", entity_registry_enabled_default=False
-        ),
-        SensorEntityDescription(
-            key="UART.Version",
-            name="UART Version",
-            entity_registry_enabled_default=False,
-        ),
+        # SensorEntityDescription(
+        #     key="DSP.Version", name="DSP Version", entity_registry_enabled_default=False
+        # ),
+        # SensorEntityDescription(
+        #     key="Tuner.DAB.DLS", name="DAB DLS", entity_registry_enabled_default=False
+        # ),
+        # SensorEntityDescription(
+        #     key="Tuner.DAB.Service",
+        #     name="DAB Service",
+        #     entity_registry_enabled_default=False,
+        # ),
+        # SensorEntityDescription(
+        #     key="Tuner.FM.RDSName",
+        #     name="FM RDS Name",
+        #     entity_registry_enabled_default=False,
+        # ),
+        # SensorEntityDescription(
+        #     key="Tuner.FM.RDSText",
+        #     name="FM RDS Text",
+        #     entity_registry_enabled_default=False,
+        # ),
+        # SensorEntityDescription(
+        #     key="Tuner.XM.ChannelName",
+        #     name="XM Channel Name",
+        #     entity_registry_enabled_default=False,
+        # ),
+        # SensorEntityDescription(
+        #     key="Tuner.XM.Name", name="XM Name", entity_registry_enabled_default=False
+        # ),
+        # SensorEntityDescription(
+        #     key="Tuner.XM.Title", name="XM Title", entity_registry_enabled_default=False
+        # ),
+        # SensorEntityDescription(
+        #     key="UART.Version",
+        #     name="UART Version",
+        #     entity_registry_enabled_default=False,
+        # ),
     ]
 
     entities = []

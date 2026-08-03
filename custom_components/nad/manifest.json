@@ -2,13 +2,13 @@
   "domain": "nad",
   "name": "NAD",
   "codeowners": [
-    "@rrooggiieerr"
+    "@tomkraemer"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/rrooggiieerr/homeassistant-nad",
+  "documentation": "https://codeberg.org/tomkraemer/homeassistant_nad-t187",
   "integration_type": "device",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/rrooggiieerr/homeassistant-nad/issues",
+  "issue_tracker": "https://codeberg.org/tomkraemer/homeassistant_nad-t187/issues",
   "loggers": [
   	"nad_receiver"
   ],

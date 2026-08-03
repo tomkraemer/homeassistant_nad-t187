@@ -69,7 +69,7 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
             # Name of the data. For logging purposes.
             name=__name__,
             # Polling interval. Will only be polled if there are subscribers.
-            update_interval=timedelta(seconds=5),
+            update_interval=timedelta(seconds=59),
         )
 
         self.config = entry.data
