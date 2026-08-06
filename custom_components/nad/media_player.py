@@ -299,6 +299,12 @@ class NADZone2(NAD):
 
     zone = "Zone2"
 
+    def __init__(self, coordinator: NADReceiverCoordinator):
+        """Initialize the NAD Receiver device."""
+        super().__init__(coordinator)
+
+        # coordinator.add_listener_command(self.zone + ".ListeningMode")
+
     # @callback
     # def _handle_coordinator_update(self) -> None:
     #     """Handle updated data from the coordinator."""
