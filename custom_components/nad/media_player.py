@@ -255,7 +255,7 @@ class NADMain(NAD):
         "SurroundEX",
     ]
 
-    # zone = "Main"
+    zone = "Main"
 
     def __init__(self, coordinator: NADReceiverCoordinator):
         """Initialize the NAD Receiver device."""
