@@ -232,6 +232,9 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
 class NADMain(NAD):
     """Representation of a NAD Receiver - Main."""
 
+    _attr_name = "NAD Main"
+    _attr_unique_id = "NAD_Main"
+
     _attr_supported_features = (
         MediaPlayerEntityFeature.VOLUME_SET
         | MediaPlayerEntityFeature.VOLUME_MUTE
@@ -261,7 +264,6 @@ class NADMain(NAD):
         """Initialize the NAD Receiver device."""
 
         _LOGGER.debug("_attr_unique_id: %s", self._attr_unique_id)
-        self._attr_name = "NAD" + " " + self.zone
 
         super().__init__(coordinator)
 
@@ -290,8 +292,11 @@ class NADMain(NAD):
 class NADZone2(NAD):
     """Representation of a NAD Receiver - Zone 2."""
 
-    _attr_name = "Zone 2"
+    _attr_name = "NAD Zone 2"
+    _attr_unique_id = "NAD_Zone2"
+
     _attr_entity_registry_enabled_default = False
+
     _attr_supported_features = (
         MediaPlayerEntityFeature.VOLUME_SET
         | MediaPlayerEntityFeature.VOLUME_MUTE
@@ -307,7 +312,6 @@ class NADZone2(NAD):
         """Initialize the NAD Receiver device."""
 
         _LOGGER.debug("_attr_unique_id: %s", self._attr_unique_id)
-        self._attr_name = "NAD" + " " + self.zone
 
         super().__init__(coordinator)
 
