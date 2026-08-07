@@ -61,7 +61,7 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
     _attr_name = None
     _attr_device_class = MediaPlayerDeviceClass.RECEIVER
 
-    zone = None
+    zone = ""
 
     def __init__(self, coordinator: NADReceiverCoordinator):
         """Initialize the NAD Receiver device."""
