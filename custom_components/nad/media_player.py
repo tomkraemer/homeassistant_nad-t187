@@ -230,7 +230,7 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
 
 
 class NADMain(NAD):
-    """Representation of a NAD Receiver - Zone 2."""
+    """Representation of a NAD Receiver - Main."""
 
     _attr_supported_features = (
         MediaPlayerEntityFeature.VOLUME_SET
@@ -259,6 +259,10 @@ class NADMain(NAD):
 
     def __init__(self, coordinator: NADReceiverCoordinator):
         """Initialize the NAD Receiver device."""
+
+        _LOGGER.debug("_attr_unique_id: %s", self._attr_unique_id)
+        self._attr_name = "NAD" + " " + self.zone
+
         super().__init__(coordinator)
 
         coordinator.add_listener_command(self.zone + ".ListeningMode")
@@ -301,6 +305,10 @@ class NADZone2(NAD):
 
     def __init__(self, coordinator: NADReceiverCoordinator):
         """Initialize the NAD Receiver device."""
+
+        _LOGGER.debug("_attr_unique_id: %s", self._attr_unique_id)
+        self._attr_name = "NAD" + " " + self.zone
+
         super().__init__(coordinator)
 
         # coordinator.add_listener_command(self.zone + ".ListeningMode")
