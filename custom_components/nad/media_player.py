@@ -232,8 +232,8 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
 class NADMain(NAD):
     """Representation of a NAD Receiver - Main."""
 
-    _attr_name = "NAD Main"
-    _attr_unique_id = "NAD_Main"
+    _attr_name = "Main"
+    # passiert in super().__init__ line #72 _attr_unique_id = "NAD_Main"
 
     _attr_supported_features = (
         MediaPlayerEntityFeature.VOLUME_SET
@@ -292,10 +292,10 @@ class NADMain(NAD):
 class NADZone2(NAD):
     """Representation of a NAD Receiver - Zone 2."""
 
-    _attr_name = "NAD Zone 2"
-    _attr_unique_id = "NAD_Zone2"
+    _attr_name = "Zone 2"
+    # passiert in super().__init__ line #72 _attr_unique_id = "NAD_Zone2"
 
-    _attr_entity_registry_enabled_default = False
+    # _attr_entity_registry_enabled_default = False
 
     _attr_supported_features = (
         MediaPlayerEntityFeature.VOLUME_SET
@@ -321,3 +321,6 @@ class NADZone2(NAD):
     # def _handle_coordinator_update(self) -> None:
     #     """Handle updated data from the coordinator."""
     #     super()._handle_coordinator_update()
+
+class NADtcp(NAD):
+    """Dummy Representation of a NAD Receiver via tcp - why so ever """
