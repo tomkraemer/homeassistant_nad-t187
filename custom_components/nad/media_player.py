@@ -51,7 +51,9 @@ async def async_setup_entry(
     elif isinstance(coordinator.receiver, NADReceiverTelnet) or isinstance(
         coordinator.receiver, NADReceiver
     ):
-        async_add_entities([NADMain(coordinator), NADZone2(coordinator)])
+        async_add_entities([
+            NADMain(coordinator), 
+            NADZone2(coordinator)])
 
 
 class NAD(CoordinatorEntity, MediaPlayerEntity):

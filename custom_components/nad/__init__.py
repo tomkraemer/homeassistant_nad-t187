@@ -218,12 +218,12 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self):
         """Fetch data from NAD Receiver."""
 
-        _LOGGER.debug("TEST: Zone bekannt??: '%s'", self.zone)
+        # _LOGGER.debug("TEST: Zone bekannt??: '%s'", self.zone)
 
 
         try:
-            # power_state = self.exec_command("Main.Power", "?")
-            power_state = self.exec_command(f"{self.zone}.Power", "?")
+            power_state = self.exec_command("Main.Power", "?")
+            # power_state = self.exec_command(f"{self.zone}.Power", "?")
         except CommandNotSupportedError:
             self.power_state = None
             raise UpdateFailed("Error communicating with NAD Receiver")
