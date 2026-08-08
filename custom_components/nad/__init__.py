@@ -163,36 +163,67 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
         return True
 
-    def exec_command(self, command: str, operator: str, value: Optional = None):
-        cmd = f"{command}{operator}"
-        if value:
-            cmd = f"{cmd}{value}"
+    # def exec_command(self, command: str, operator: str, value: Optional = None):
+    #     cmd = f"{command}{operator}"
+    #     if value:
+    #         cmd = f"{cmd}{value}"
 
-        if self.config[CONF_TYPE] == CONF_TYPE_SERIAL:
-            self.receiver.transport.ser.reset_input_buffer()
+    #     if self.config[CONF_TYPE] == CONF_TYPE_SERIAL:
+    #         self.receiver.transport.ser.reset_input_buffer()
 
-        try:
-            msg = self.receiver.transport.communicate(cmd)
-            _LOGGER.debug("sent: '%s' reply: '%s'", command, msg)
+    #     try:
+    #         msg = self.receiver.transport.communicate(cmd)
+    #         _LOGGER.debug("sent: '%s' reply: '%s'", command, msg)
 
-            if msg == "":
-                raise CommandNotSupportedError()
+    #         if msg == "":
+    #             raise CommandNotSupportedError()
 
-            if msg.lower().startswith(command.lower() + "="):
-                return msg.split("=")[1]
-        except UnicodeDecodeError as ex:
-            _LOGGER.error(ex)
+    #         if msg.lower().startswith(command.lower() + "="):
+    #             return msg.split("=")[1]
+    #     except UnicodeDecodeError as ex:
+    #         _LOGGER.error(ex)
 
-        return None
+    #     return None
+
+def exec_command(self, command: str, operator: str, value: Optional = None):
+    cmd = f"{command}{operator}"
+    if value:
+        cmd = f"{cmd}{value}"
+
+    if self.config[CONF_TYPE] == CONF_TYPE_SERIAL:
+        self.receiver.transport.ser.reset_input_buffer()
+
+    try:
+        # Empfängt ROHE Antwort (kann mehrere Zeilen enthalten, z. B. "Volume=24\nMain.Power=On")
+        raw_response = self.receiver.transport.communicate(cmd)
+        _LOGGER.debug("sent: '%s' raw reply: '%s'", cmd, raw_response)
+
+        if not raw_response:
+            raise CommandNotSupportedError()
+
+        # Suche die Zeile, die zur Anfrage passt (z. B. "Main.Power=On")
+        expected_prefix = f"{command}="  # z. B. "Main.Power="
+        for line in raw_response.splitlines():
+            line = line.strip()
+            if line.startswith(expected_prefix):
+                return line.split("=", 1)[1]  # Gibt nur den Wert zurück (z. B. "On")
+
+        # Falls keine passende Zeile gefunden wurde
+        raise CommandNotSupportedError()
+
+    except UnicodeDecodeError as ex:
+        _LOGGER.error("Decode error in exec_command: %s", ex)
+        raise CommandNotSupportedError()
 
     async def _async_update_data(self):
         """Fetch data from NAD Receiver."""
 
-        _LOGGER.debug("TEST: Zone bekannt??: '%s'", self.zone)
+        # _LOGGER.debug("TEST: Zone bekannt??: '%s'", self.zone)
 
 
         try:
-            power_state = self.exec_command("Main.Power", "?")
+            # power_state = self.exec_command("Main.Power", "?")
+            power_state = self.exec_command(f"{self.zone}.Power", "?")
         except CommandNotSupportedError:
             self.power_state = None
             raise UpdateFailed("Error communicating with NAD Receiver")
