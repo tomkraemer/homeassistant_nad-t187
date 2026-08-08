@@ -265,6 +265,8 @@ class NADMain(NAD):
 
         _LOGGER.debug("_attr_unique_id: %s", self._attr_unique_id)
 
+        coordinator.zone = self.zone
+
         super().__init__(coordinator)
 
         coordinator.add_listener_command(self.zone + ".ListeningMode")
@@ -312,6 +314,8 @@ class NADZone2(NAD):
         """Initialize the NAD Receiver device."""
 
         _LOGGER.debug("_attr_unique_id: %s", self._attr_unique_id)
+
+        coordinator.zone = self.zone
 
         super().__init__(coordinator)
 
