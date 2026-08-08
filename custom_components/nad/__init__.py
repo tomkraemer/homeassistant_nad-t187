@@ -59,6 +59,8 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
     power_state = None
 
+    # zone = ""
+
     _listener_commands = []
 
     def __init__(self, hass, entry: ConfigEntry):
@@ -185,6 +187,10 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         """Fetch data from NAD Receiver."""
+
+        _LOGGER.debug("TEST: Zone bekannt??: '%s'", self.zone)
+
+
         try:
             power_state = self.exec_command("Main.Power", "?")
         except CommandNotSupportedError:
@@ -195,9 +201,13 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
             raise UpdateFailed("Error communicating with NAD Receiver", ex)
 
         _LOGGER.debug("power_state: %s", power_state)
+        # hier muss man nacharbeiten: wenn parallel mit einer Remote was passiert 
+        # kommen hier alle zwischenzeitlichen Änderungen gespiegelt zurück, also z.B.
+        # ... Volume=24  Volume=23 ...
+        # und dann erst die Antwort auf diese Anfrage 
         if not power_state:
             self.power_state = None
-            raise UpdateFailed("Error communicating with NAD Receiver")
+            raise UpdateFailed("Error communicating with NAD Receiver") 
 
         if power_state.lower() == "on":
             self.power_state = MediaPlayerState.ON
