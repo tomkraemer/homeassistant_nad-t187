@@ -258,13 +258,12 @@ class NADMain(NAD):
         "SurroundEX",
     ]
 
-    zone = "Main"
-
     def __init__(self, coordinator: NADReceiverCoordinator):
         """Initialize the NAD Receiver device."""
 
         _LOGGER.debug("_attr_unique_id: %s", self._attr_unique_id)
 
+        self.zone = "Main"
         coordinator.zone = self.zone
 
         super().__init__(coordinator)
@@ -308,13 +307,12 @@ class NADZone2(NAD):
         | MediaPlayerEntityFeature.SELECT_SOURCE
     )
 
-    zone = "Zone2"
-
     def __init__(self, coordinator: NADReceiverCoordinator):
         """Initialize the NAD Receiver device."""
 
         _LOGGER.debug("_attr_unique_id: %s", self._attr_unique_id)
 
+        self.zone = "Zone2"
         coordinator.zone = self.zone
 
         super().__init__(coordinator)
