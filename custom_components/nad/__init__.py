@@ -59,7 +59,7 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
     power_state = None
 
-    # zone = "Main" bzw ""
+    zone = "Nix" 
 
     _listener_commands = []
 
