@@ -185,35 +185,35 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
     #     return None
 
-def exec_command(self, command: str, operator: str, value: Optional = None):
-    cmd = f"{command}{operator}"
-    if value:
-        cmd = f"{cmd}{value}"
+    def exec_command(self, command: str, operator: str, value: Optional = None):
+        cmd = f"{command}{operator}"
+        if value:
+            cmd = f"{cmd}{value}"
 
-    if self.config[CONF_TYPE] == CONF_TYPE_SERIAL:
-        self.receiver.transport.ser.reset_input_buffer()
+        if self.config[CONF_TYPE] == CONF_TYPE_SERIAL:
+            self.receiver.transport.ser.reset_input_buffer()
 
-    try:
-        # Empfängt ROHE Antwort (kann mehrere Zeilen enthalten, z. B. "Volume=24\nMain.Power=On")
-        raw_response = self.receiver.transport.communicate(cmd)
-        _LOGGER.debug("sent: '%s' raw reply: '%s'", cmd, raw_response)
+        try:
+            # Empfängt ROHE Antwort (kann mehrere Zeilen enthalten, z. B. "Volume=24\nMain.Power=On")
+            raw_response = self.receiver.transport.communicate(cmd)
+            _LOGGER.debug("sent: '%s' raw reply: '%s'", cmd, raw_response)
 
-        if not raw_response:
+            if not raw_response:
+                raise CommandNotSupportedError()
+
+            # Suche die Zeile, die zur Anfrage passt (z. B. "Main.Power=On")
+            expected_prefix = f"{command}="  # z. B. "Main.Power="
+            for line in raw_response.splitlines():
+                line = line.strip()
+                if line.startswith(expected_prefix):
+                    return line.split("=", 1)[1]  # Gibt nur den Wert zurück (z. B. "On")
+
+            # Falls keine passende Zeile gefunden wurde
             raise CommandNotSupportedError()
 
-        # Suche die Zeile, die zur Anfrage passt (z. B. "Main.Power=On")
-        expected_prefix = f"{command}="  # z. B. "Main.Power="
-        for line in raw_response.splitlines():
-            line = line.strip()
-            if line.startswith(expected_prefix):
-                return line.split("=", 1)[1]  # Gibt nur den Wert zurück (z. B. "On")
-
-        # Falls keine passende Zeile gefunden wurde
-        raise CommandNotSupportedError()
-
-    except UnicodeDecodeError as ex:
-        _LOGGER.error("Decode error in exec_command: %s", ex)
-        raise CommandNotSupportedError()
+        except UnicodeDecodeError as ex:
+            _LOGGER.error("Decode error in exec_command: %s", ex)
+            raise CommandNotSupportedError()
 
     async def _async_update_data(self):
         """Fetch data from NAD Receiver."""
