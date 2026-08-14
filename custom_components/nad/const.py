@@ -16,6 +16,6 @@ CONF_MAX_VOLUME: Final = "max_volume"
 CONF_VOLUME_STEP: Final = "volume_step"     # for NADReceiverTCP
 CONF_SOURCE_DICT: Final = "sources"         # for NADReceiver
 
-CONF_DEFAULT_MIN_VOLUME: Final = -92
-CONF_DEFAULT_MAX_VOLUME: Final = -20
+CONF_DEFAULT_MIN_VOLUME: Final = -97    #-92
+CONF_DEFAULT_MAX_VOLUME: Final = 19     #-20
 CONF_DEFAULT_VOLUME_STEP: Final = 4
