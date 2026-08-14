@@ -88,12 +88,12 @@ STEP_CONFIG_VOLUME_SCHEMA = vol.Schema(
                 unit_of_measurement=UnitOfSoundPressure.DECIBEL,
             )
         ),
-        # vol.Required(
-        #     CONF_VOLUME_STEP,
-        #     default=self.config_entry.options.get(
-        #         CONF_VOLUME_STEP, CONF_DEFAULT_VOLUME_STEP
-        #     ),
-        # ): cv.positive_int,
+        vol.Required(
+            CONF_VOLUME_STEP,
+            default=self.config_entry.options.get(
+                CONF_VOLUME_STEP, CONF_DEFAULT_VOLUME_STEP
+            ),
+        ): cv.positive_int,
     }
 )
 
@@ -263,6 +263,7 @@ class NADReceiverConfigFlow(ConfigFlow, domain=DOMAIN):
             {
                 CONF_MIN_VOLUME: CONF_DEFAULT_MIN_VOLUME,
                 CONF_MAX_VOLUME: CONF_DEFAULT_MAX_VOLUME,
+                CONF_VOLUME_STEP: CONF_DEFAULT_VOLUME_STEP,     # Tom: Added 14.08.26
             },
         )
 
