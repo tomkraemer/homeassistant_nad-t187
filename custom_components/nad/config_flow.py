@@ -90,9 +90,10 @@ STEP_CONFIG_VOLUME_SCHEMA = vol.Schema(
         ),
         vol.Required(
             CONF_VOLUME_STEP,
-            default=self.config_entry.options.get(
-                CONF_VOLUME_STEP, CONF_DEFAULT_VOLUME_STEP
-            ),
+            # default=self.config_entry.options.get(
+            #     CONF_VOLUME_STEP, CONF_DEFAULT_VOLUME_STEP
+            #),
+            default=CONF_DEFAULT_VOLUME_STEP,
         ): cv.positive_int,
     }
 )
