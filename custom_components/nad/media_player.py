@@ -58,6 +58,7 @@ async def async_setup_entry(
         #     NADZone2(coordinators["Zone2"]),    # ✅ Zone2-Entity nutzt Zone2-Coordinator
         # ])
         #-----------------------------
+        
         async_add_entities([
             NADMain(coordinator), 
             NADZone2(coordinator)])

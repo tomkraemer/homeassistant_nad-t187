@@ -291,8 +291,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     try:
-        receiver_coordinator = NADReceiverCoordinator(hass, entry)
-
         #-----------------------------
         # Erstelle einen Coordinator pro Zone (mir langt Main und Zone2)
         coordinators = {
@@ -301,6 +299,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         }
         #-----------------------------
         
+        receiver_coordinator = NADReceiverCoordinator(hass, entry)
 
         # Open the connection.
         if not await receiver_coordinator.connect():
