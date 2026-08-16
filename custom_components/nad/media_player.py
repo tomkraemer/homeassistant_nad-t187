@@ -67,9 +67,10 @@ async def async_setup_entry(
 
     # Fetch initial data so we have data when entities subscribe
     await coordinators["Main"].async_config_entry_first_refresh()
-    
+    await coordinators["Zone2"].async_config_entry_first_refresh()
+
     if isinstance(coordinators["Main"].receiver, NADReceiverTCP):
-        async_add_entities([NADtcp(coordinator)])
+        async_add_entities([NADtcp(coordinators["Main"])])
     elif isinstance(coordinators["Main"].receiver, NADReceiverTelnet) or isinstance(
         coordinators["Main"].receiver, NADReceiver
     ):
