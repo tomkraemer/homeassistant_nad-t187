@@ -307,7 +307,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         
 
         # Open the connection.
-        if not await receiver_coordinator.connect():
+        #if not await receiver_coordinator.connect():
+        if not await coordinators["Main"].connect():
             raise ConfigEntryNotReady(f"Unable to connect to NAD receiver")
 
         _LOGGER.info("NAD receiver is available")
