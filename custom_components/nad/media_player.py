@@ -115,9 +115,8 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
 
         _LOGGER.debug("XXXXX M E D I A P L A Y E R     POST --------   TEST: Zone: '%s' Unique_ID: '%s'", coordinator.zone, coordinator.unique_id) 
 
-        if self.zone == "Main":
-            self._source_dict = coordinator.sources
-            self._reverse_mapping = {value: key for key, value in self._source_dict.items()}
+        self._source_dict = coordinator.sources
+        self._reverse_mapping = {value: key for key, value in self._source_dict.items()}
 
     async def async_added_to_hass(self) -> None:
         _LOGGER.debug("async_added_to_hass")
