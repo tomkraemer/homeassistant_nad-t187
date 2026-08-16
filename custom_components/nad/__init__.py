@@ -231,8 +231,10 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
 
         try:
-            power_state = self.exec_command("Main.Power", "?")
-            #power_state = self.exec_command(f"{self.zone}.Power", "?")
+            #-----------------------------
+            #power_state = self.exec_command("Main.Power", "?")
+            power_state = self.exec_command(f"{self.zone}.Power", "?")
+            #-----------------------------
         except CommandNotSupportedError:
             self.power_state = None
             raise UpdateFailed("Error communicating with NAD Receiver")
@@ -255,8 +257,10 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
             self.power_state = MediaPlayerState.OFF
 
         data = {}
-        data["Main.Power"] = power_state
-        #data[f"{self.zone}.Power"] = power_state
+        #-----------------------------
+        #data["Main.Power"] = power_state
+        data[f"{self.zone}.Power"] = power_state
+        #-----------------------------
     
         for command in self._listener_commands:
             if command not in data:
@@ -298,9 +302,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "Main": NADReceiverCoordinator(hass, entry, zone="Main"),
             "Zone2": NADReceiverCoordinator(hass, entry, zone="Zone2"),
         }
+        #receiver_coordinator = NADReceiverCoordinator(hass, entry)
         #-----------------------------
         
-        receiver_coordinator = NADReceiverCoordinator(hass, entry)
 
         # Open the connection.
         if not await receiver_coordinator.connect():
@@ -314,11 +318,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     #-----------------------------
     # Speichere alle Coordinators in runtime_data
     entry.runtime_data = coordinators  # ✅ Nicht nur ein Coordinator, sondern ein Dict!
+    # ursprünglich: ein Coordinator:
+    #entry.runtime_data = receiver_coordinator
     #-----------------------------
 
-    #ursprünglich: ein Coordinator:
-    entry.runtime_data = receiver_coordinator
-
+    
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     entry.async_on_unload(entry.add_update_listener(update_listener))

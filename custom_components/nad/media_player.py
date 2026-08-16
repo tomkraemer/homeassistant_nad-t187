@@ -35,33 +35,50 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
+# async def async_setup_entry(
+#     hass: HomeAssistant,
+#     config_entry: ConfigEntry,
+#     async_add_entities: AddConfigEntryEntitiesCallback,
+# ) -> None:
+#     """Set up the NAD Receiver media player."""
+#     coordinator: NADReceiverCoordinator = config_entry.runtime_data
+
+#     # Fetch initial data so we have data when entities subscribe
+#     await coordinator.async_config_entry_first_refresh()
+    
+#     if isinstance(coordinator.receiver, NADReceiverTCP):
+#         async_add_entities([NADtcp(coordinator)])
+#     elif isinstance(coordinator.receiver, NADReceiverTelnet) or isinstance(
+#         coordinator.receiver, NADReceiver
+#     ):
+#         async_add_entities([
+#             NADMain(coordinator), 
+#             NADZone2(coordinator)])
+
+#-----------------------------
+# wir nutzen zukünftig zwei Coordinator <-> einer pro Zone
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the NAD Receiver media player."""
-    coordinator: NADReceiverCoordinator = config_entry.runtime_data
+    coordinators: dict = config_entry.runtime_data  # ✅ Dict mit allen Coordinators
 
     # Fetch initial data so we have data when entities subscribe
-    await coordinator.async_config_entry_first_refresh()
-
-    if isinstance(coordinator.receiver, NADReceiverTCP):
+    await coordinators["Main"].async_config_entry_first_refresh()
+    
+    if isinstance(coordinators["Main"].receiver, NADReceiverTCP):
         async_add_entities([NADtcp(coordinator)])
-    elif isinstance(coordinator.receiver, NADReceiverTelnet) or isinstance(
-        coordinator.receiver, NADReceiver
+    elif isinstance(coordinators["Main"].receiver, NADReceiverTelnet) or isinstance(
+        coordinators["Main"].receiver, NADReceiver
     ):
-        #-----------------------------
-        # wir nutzen zukünftig zwei Coordinator <-> einer pro Zone:
-        # async_add_entities([
-        #     NADMain(coordinators["Main"]),      # ✅ Main-Entity nutzt Main-Coordinator
-        #     NADZone2(coordinators["Zone2"]),    # ✅ Zone2-Entity nutzt Zone2-Coordinator
-        # ])
-        #-----------------------------
-
         async_add_entities([
-            NADMain(coordinator), 
-            NADZone2(coordinator)])
+            NADMain(coordinators["Main"]),      # ✅ Main-Entity nutzt Main-Coordinator
+            NADZone2(coordinators["Zone2"]),    # ✅ Zone2-Entity nutzt Zone2-Coordinator
+        ])
+    #-----------------------------
+
 
 
 class NAD(CoordinatorEntity, MediaPlayerEntity):
