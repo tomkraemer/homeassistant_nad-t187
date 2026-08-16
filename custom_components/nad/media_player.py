@@ -71,8 +71,7 @@ async def async_setup_entry(
 
     if isinstance(coordinators["Main"].receiver, NADReceiverTCP):
         async_add_entities([NADtcp(coordinators["Main"])])
-    elif isinstance(coordinators["Main"].receiver, NADReceiverTelnet) or isinstance(
-        coordinators["Main"].receiver, NADReceiver
+    elif isinstance(coordinators["Main"].receiver, NADReceiverTelnet) or isinstance(coordinators["Main"].receiver, NADReceiver
     ):
         async_add_entities([
             NADMain(coordinators["Main"]),      # ✅ Main-Entity nutzt Main-Coordinator
@@ -93,6 +92,9 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
 
     def __init__(self, coordinator: NADReceiverCoordinator):
         """Initialize the NAD Receiver device."""
+
+        _LOGGER.debug("XXXXX M E D I A P L A Y E R XXXXX --------   TEST: Zone: '%s' Unique_ID: '%s'", coordinator.zone, coordinator.unique_id) 
+
         super().__init__(coordinator, self.zone + ".Power")
 
         self._attr_device_info = coordinator.device_info
@@ -291,7 +293,7 @@ class NADMain(NAD):
 
         _LOGGER.debug("_attr_unique_id: %s", self._attr_unique_id)
 
-        #self.zone = "Main"
+        self.zone = "Main"
         #coordinator.zone = self.zone
 
         super().__init__(coordinator)
@@ -340,7 +342,7 @@ class NADZone2(NAD):
 
         _LOGGER.debug("_attr_unique_id: %s", self._attr_unique_id)
 
-        #self.zone = "Zone2"
+        self.zone = "Zone2"
         #coordinator.zone = self.zone
 
         super().__init__(coordinator)
