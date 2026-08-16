@@ -58,7 +58,7 @@ async def async_setup_entry(
         #     NADZone2(coordinators["Zone2"]),    # ✅ Zone2-Entity nutzt Zone2-Coordinator
         # ])
         #-----------------------------
-        
+
         async_add_entities([
             NADMain(coordinator), 
             NADZone2(coordinator)])
@@ -273,8 +273,8 @@ class NADMain(NAD):
 
         _LOGGER.debug("_attr_unique_id: %s", self._attr_unique_id)
 
-        self.zone = "Main"
-        coordinator.zone = self.zone
+        #self.zone = "Main"
+        #coordinator.zone = self.zone
 
         super().__init__(coordinator)
 
@@ -322,8 +322,8 @@ class NADZone2(NAD):
 
         _LOGGER.debug("_attr_unique_id: %s", self._attr_unique_id)
 
-        self.zone = "Zone2"
-        coordinator.zone = self.zone
+        #self.zone = "Zone2"
+        #coordinator.zone = self.zone
 
         super().__init__(coordinator)
 

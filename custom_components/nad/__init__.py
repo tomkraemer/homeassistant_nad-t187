@@ -232,7 +232,7 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
         try:
             power_state = self.exec_command("Main.Power", "?")
-            # power_state = self.exec_command(f"{self.zone}.Power", "?")
+            #power_state = self.exec_command(f"{self.zone}.Power", "?")
         except CommandNotSupportedError:
             self.power_state = None
             raise UpdateFailed("Error communicating with NAD Receiver")
@@ -256,7 +256,8 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
         data = {}
         data["Main.Power"] = power_state
-
+        #data[f"{self.zone}.Power"] = power_state
+    
         for command in self._listener_commands:
             if command not in data:
                 data[command] = self.exec_command(command, "?")
@@ -309,14 +310,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except serial.SerialException as ex:
         raise ConfigEntryNotReady(f"Unable to connect to NAD receiver") from ex
 
-    #ursprünhlich: nur ein Coordinator:
-    entry.runtime_data = receiver_coordinator
 
     #-----------------------------
     # Speichere alle Coordinators in runtime_data
     entry.runtime_data = coordinators  # ✅ Nicht nur ein Coordinator, sondern ein Dict!
     #-----------------------------
- 
+
+    #ursprünglich: ein Coordinator:
+    entry.runtime_data = receiver_coordinator
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     entry.async_on_unload(entry.add_update_listener(update_listener))
