@@ -211,6 +211,12 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
             # Falls keine passende Zeile gefunden wurde
             raise CommandNotSupportedError()
 
+        # Timeouts können gelegentlich auftreten (z. B. bei langsamer serieller Verbindung)
+        # und werden hier bewusst ignoriert, aber als Debug-Info geloggt, um den
+        # normalen Flow nicht zu unterbrechen. Rückgabe: None
+        except (TimeoutError, serial.SerialTimeoutException) as ex:
+            _LOGGER.debug("Timeout in exec_command for '%s': %s", cmd, ex)
+            return None
         except UnicodeDecodeError as ex:
             _LOGGER.error("Decode error in exec_command: %s", ex)
             raise CommandNotSupportedError()
