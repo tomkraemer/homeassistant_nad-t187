@@ -224,7 +224,7 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self):
         """Fetch data from NAD Receiver."""
 
-        # _LOGGER.debug("TEST: Zone bekannt??: '%s'", self.zone)
+        _LOGGER.debug("XXXXXXXXXXXXXXXXXXX --------   TEST: Zone bekannt??: '%s'", self.zone)
 
 
         try:
