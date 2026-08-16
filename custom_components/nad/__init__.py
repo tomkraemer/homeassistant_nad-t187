@@ -63,7 +63,10 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
     _listener_commands = []
 
-    def __init__(self, hass, entry: ConfigEntry):
+    def __init__(self, hass, entry: ConfigEntry, zone: str = "Main"):
+
+        self.zone = zone 
+    
         """Initialize NAD Receiver Data Update Coordinator."""
         super().__init__(
             hass,
@@ -290,6 +293,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         receiver_coordinator = NADReceiverCoordinator(hass, entry)
 
+        #-----------------------------
+        # Erstelle einen Coordinator pro Zone (mir langt Main und Zone2)
+        coordinators = {
+            "Main": NADReceiverCoordinator(hass, entry, zone="Main"),
+            "Zone2": NADReceiverCoordinator(hass, entry, zone="Zone2"),
+        }
+        #-----------------------------
+        
+
         # Open the connection.
         if not await receiver_coordinator.connect():
             raise ConfigEntryNotReady(f"Unable to connect to NAD receiver")
@@ -298,8 +310,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except serial.SerialException as ex:
         raise ConfigEntryNotReady(f"Unable to connect to NAD receiver") from ex
 
+    #ursprünhlich: nur ein Coordinator:
     entry.runtime_data = receiver_coordinator
 
+    #-----------------------------
+    # Speichere alle Coordinators in runtime_data
+    entry.runtime_data = coordinators  # ✅ Nicht nur ein Coordinator, sondern ein Dict!
+    #-----------------------------
+ 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     entry.async_on_unload(entry.add_update_listener(update_listener))

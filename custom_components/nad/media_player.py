@@ -51,6 +51,13 @@ async def async_setup_entry(
     elif isinstance(coordinator.receiver, NADReceiverTelnet) or isinstance(
         coordinator.receiver, NADReceiver
     ):
+        #-----------------------------
+        # wir nutzen zukünftig zwei Coordinator <-> einer pro Zone:
+        # async_add_entities([
+        #     NADMain(coordinators["Main"]),      # ✅ Main-Entity nutzt Main-Coordinator
+        #     NADZone2(coordinators["Zone2"]),    # ✅ Zone2-Entity nutzt Zone2-Coordinator
+        # ])
+        #-----------------------------
         async_add_entities([
             NADMain(coordinator), 
             NADZone2(coordinator)])

@@ -392,6 +392,10 @@ async def async_setup_entry(
 
     for entity_description in entity_descriptions:
         if coordinator.supports_command(entity_description.key):
+            #-----------------------------
+            # Nutze passenden Coordinator (Main sollte i.d.R passen)
+#            entities.append(NADReceiverSelect(coordinators["Main"], entity_description))
+            #-----------------------------
             entities.append(NADReceiverNumber(coordinator, entity_description))
 
     async_add_entities(entities)
