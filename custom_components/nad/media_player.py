@@ -108,14 +108,16 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
         self._max_volume = coordinator.options.get(
             CONF_MAX_VOLUME, CONF_DEFAULT_MAX_VOLUME
         )
-        _LOGGER.debug("XXXXX M E D I A P L A Y E R     POST --------   TEST: Zone: '%s' Unique_ID: '%s'", coordinator.zone, coordinator.unique_id) 
-
-        self._source_dict = coordinator.sources
-        self._reverse_mapping = {value: key for key, value in self._source_dict.items()}
 
         coordinator.add_listener_command(self.zone + ".Mute")
         coordinator.add_listener_command(self.zone + ".Volume")
         coordinator.add_listener_command(self.zone + ".Source")
+
+        _LOGGER.debug("XXXXX M E D I A P L A Y E R     POST --------   TEST: Zone: '%s' Unique_ID: '%s'", coordinator.zone, coordinator.unique_id) 
+
+        if self.zone is "Main":
+            self._source_dict = coordinator.sources
+            self._reverse_mapping = {value: key for key, value in self._source_dict.items()}
 
     async def async_added_to_hass(self) -> None:
         _LOGGER.debug("async_added_to_hass")
