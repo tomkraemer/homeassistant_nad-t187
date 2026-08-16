@@ -25,7 +25,8 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the NAD Receiver sensor."""
-    coordinator: NADReceiverCoordinator = config_entry.runtime_data
+    #coordinator: NADReceiverCoordinator = config_entry.runtime_data
+    coordinator: NADReceiverCoordinator = config_entry.runtime_data["Main"]
 
     # Fetch initial data so we have data when entities subscribe
     # await coordinator.async_config_entry_first_refresh()

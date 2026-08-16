@@ -48,7 +48,7 @@ class CommandNotSupportedError(Exception):
 
 
 class NADReceiverCoordinator(DataUpdateCoordinator):
-    """NAD Receiver Data Update Coordinator."""
+    """NAD Receiver Data Update Coordinator"""
 
     receiver: NADReceiver = None
 
@@ -67,7 +67,7 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
         self.zone = zone 
     
-        """Initialize NAD Receiver Data Update Coordinator."""
+        """Initialize NAD Receiver Data Update Coordinator"""
         super().__init__(
             hass,
             _LOGGER,
@@ -333,7 +333,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    receiver_coordinator: NADReceiverCoordinator = entry.runtime_data
+    receiver_coordinator: NADReceiverCoordinator = entry.runtime_data["Main"]
     await receiver_coordinator.disconnect()
 
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
