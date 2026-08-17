@@ -93,7 +93,7 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
     def __init__(self, coordinator: NADReceiverCoordinator):
         """Initialize the NAD Receiver device."""
 
-        _LOGGER.debug("XXXXX M E D I A P L A Y E R      PRE ++++++++   TEST: Zone: '%s' Unique_ID: '%s'", coordinator.zone, coordinator.unique_id) 
+#        _LOGGER.debug("XXXXX M E D I A P L A Y E R      PRE ++++++++   TEST: Zone: '%s' Unique_ID: '%s'", coordinator.zone, coordinator.unique_id) 
 
         super().__init__(coordinator, self.zone + ".Power")
 
@@ -113,7 +113,7 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
         coordinator.add_listener_command(self.zone + ".Volume")
         coordinator.add_listener_command(self.zone + ".Source")
 
-        _LOGGER.debug("XXXXX M E D I A P L A Y E R     POST --------   TEST: Zone: '%s' Unique_ID: '%s'", coordinator.zone, coordinator.unique_id) 
+#        _LOGGER.debug("XXXXX M E D I A P L A Y E R     POST --------   TEST: Zone: '%s' Unique_ID: '%s'", coordinator.zone, coordinator.unique_id) 
 
         self._source_dict = coordinator.sources
         self._reverse_mapping = {value: key for key, value in self._source_dict.items()}

@@ -227,7 +227,7 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self):
         """Fetch data from NAD Receiver."""
 
-        _LOGGER.debug("XXXXXXXXXXXXXXXXXXXXX --------   TEST: Zone bekannt??: '%s'", self.zone)
+#        _LOGGER.debug("XXXXXXXXXXXXXXXXXXXXX --------   TEST: Zone bekannt??: '%s'", self.zone)
 
 
         try:
@@ -261,10 +261,15 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
         #data["Main.Power"] = power_state
         data[f"{self.zone}.Power"] = power_state
         #-----------------------------
-    
+
+
+#        _LOGGER.debug("vvvvvvvvvvPREvvvvvvvvvvv  Zone: '%s'", self.zone)
         for command in self._listener_commands:
-            if command not in data:
+#            _LOGGER.debug(">>>>>>>>>>>  command: '%s'", command)
+            # if command not in data:
+            if command not in data and command.startswith(f"{self.zone}."):
                 data[command] = self.exec_command(command, "?")
+#        _LOGGER.debug("^^^^^^^^POST^^^^^^^^^^^^  done ")
 
         return data
 
