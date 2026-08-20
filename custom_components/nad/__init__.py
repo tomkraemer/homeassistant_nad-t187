@@ -73,7 +73,7 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
             # Name of the data. For logging purposes.
             name=__name__,
             # Polling interval. Will only be polled if there are subscribers.
-            update_interval=timedelta(seconds=59),
+            update_interval=timedelta(seconds=25),
         )
 
         self.config = entry.data
@@ -196,6 +196,9 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
                     return line.split("=", 1)[1]  # Gibt nur den Wert zurück (z. B. "On")
 
             # -- Falls keine passende Zeile gefunden wurde
+            _LOGGER.error("Error communicating with NAD Receiver (CommandNotSupportedError)")
+            _LOGGER.error("tried '%s'", cmd, )
+            _LOGGER.error("received (raw): '%s'", raw_response)
             raise CommandNotSupportedError()
             #------------END-------------------
 
@@ -224,6 +227,7 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
             #------------END-------------------
         except CommandNotSupportedError:
             self.power_state = None
+            _LOGGER.error("Error communicating with NAD Receiver (CommandNotSupportedError). Tried '%s'.power? received: '%s'", self.zone, power_state)
             raise UpdateFailed("Error communicating with NAD Receiver (CommandNotSupportedError). Tried '%s'.power?", self.zone)
         except IOError as ex:
             self.power_state = None

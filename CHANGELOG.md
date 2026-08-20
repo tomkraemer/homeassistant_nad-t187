@@ -31,4 +31,10 @@ Alle Antworten werden empfangen, aber alle nicht zur Anfrage gehörenden werden 
 überträt vioa `<CTRL><SHIFT><B>` Files 
 - von `/Users/tom/Coding/Codeberg/homeassistant_nad-t187/custom_components/nad/` 
 - nach `/Volumes/config/custom_components/nad/`  *[smb-Mount -> Finder `<CTRL><K>`)]*
-
+<br><br><br><br>
+------------------------------
+<br><br>
+### How-To <br>
+git tag -a 1.0.0 -m "Version 1.0.0 - First Final"<br>
+git push origin 1.0.0<br>
+im Codeberg bzw. github "New Release" auf basis `<tag>`
