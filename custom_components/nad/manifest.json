@@ -1,19 +1,13 @@
 {
   "domain": "nad",
   "name": "NAD",
-  "codeowners": [
-    "@tomkraemer"
-  ],
+  "codeowners": ["@tomkraemer"],
   "config_flow": true,
   "documentation": "https://codeberg.org/tomkraemer/homeassistant_nad-t187",
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://codeberg.org/tomkraemer/homeassistant_nad-t187/issues",
-  "loggers": [
-  	"nad_receiver"
-  ],
-  "requirements": [
-  	"nad_receiver==0.3.0"
-  ],
-  "version": "0.0.3"
+  "loggers": ["nad_receiver"],
+  "requirements": ["nad_receiver==0.3.0"],
+  "version": "1.0.0"
 }

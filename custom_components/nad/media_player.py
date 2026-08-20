@@ -34,27 +34,6 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-
-# async def async_setup_entry(
-#     hass: HomeAssistant,
-#     config_entry: ConfigEntry,
-#     async_add_entities: AddConfigEntryEntitiesCallback,
-# ) -> None:
-#     """Set up the NAD Receiver media player."""
-#     coordinator: NADReceiverCoordinator = config_entry.runtime_data
-
-#     # Fetch initial data so we have data when entities subscribe
-#     await coordinator.async_config_entry_first_refresh()
-    
-#     if isinstance(coordinator.receiver, NADReceiverTCP):
-#         async_add_entities([NADtcp(coordinator)])
-#     elif isinstance(coordinator.receiver, NADReceiverTelnet) or isinstance(
-#         coordinator.receiver, NADReceiver
-#     ):
-#         async_add_entities([
-#             NADMain(coordinator), 
-#             NADZone2(coordinator)])
-
 #-----------------------------
 # wir nutzen zukünftig zwei Coordinator <-> einer pro Zone
 async def async_setup_entry(
@@ -65,19 +44,27 @@ async def async_setup_entry(
     """Set up the NAD Receiver media player."""
     coordinators: dict = config_entry.runtime_data  # ✅ Dict mit allen Coordinators
 
+    #------------START-----------------
+    # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
+    #   Beide Controller getrennt voneinander initialisieren
     # Fetch initial data so we have data when entities subscribe
     await coordinators["Main"].async_config_entry_first_refresh()
     await coordinators["Zone2"].async_config_entry_first_refresh()
+    #-------------END-----------------
 
     if isinstance(coordinators["Main"].receiver, NADReceiverTCP):
         async_add_entities([NADtcp(coordinators["Main"])])
     elif isinstance(coordinators["Main"].receiver, NADReceiverTelnet) or isinstance(coordinators["Main"].receiver, NADReceiver
     ):
+        #------------START-----------------
+        # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
+        #   Beide Controller getrennt voneinander anmelden
         async_add_entities([
             NADMain(coordinators["Main"]),      # ✅ Main-Entity nutzt Main-Coordinator
             NADZone2(coordinators["Zone2"]),    # ✅ Zone2-Entity nutzt Zone2-Coordinator
         ])
-    #-----------------------------
+    #-------------END-----------------
+#-----------------------------
 
 
 
@@ -291,12 +278,12 @@ class NADMain(NAD):
     ]
 
     def __init__(self, coordinator: NADReceiverCoordinator):
-        """Initialize the NAD Receiver device."""
+        """Initialize the NAD Receiver - Main."""
 
-        _LOGGER.debug("_attr_unique_id: %s", self._attr_unique_id)
-
+        #------------START-----------------
+        # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
         self.zone = "Main"
-        #coordinator.zone = self.zone
+        #-------------END-----------------
 
         super().__init__(coordinator)
 
@@ -326,8 +313,6 @@ class NADZone2(NAD):
     """Representation of a NAD Receiver - Zone 2."""
 
     _attr_name = "Zone 2"
-    # passiert in super().__init__ line #72 _attr_unique_id = "NAD_Zone2"
-
     # _attr_entity_registry_enabled_default = False
 
     _attr_supported_features = (
@@ -342,19 +327,11 @@ class NADZone2(NAD):
     def __init__(self, coordinator: NADReceiverCoordinator):
         """Initialize the NAD Receiver device."""
 
-        _LOGGER.debug("_attr_unique_id: %s", self._attr_unique_id)
-
+        #------------START-----------------
+        # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
         self.zone = "Zone2"
-        #coordinator.zone = self.zone
+        #-------------END-----------------
 
         super().__init__(coordinator)
-
-        # coordinator.add_listener_command(self.zone + ".ListeningMode")
-
-    # @callback
-    # def _handle_coordinator_update(self) -> None:
-    #     """Handle updated data from the coordinator."""
-    #     super()._handle_coordinator_update()
-
 class NADtcp(NAD):
     """Dummy Representation of a NAD Receiver via tcp - why so ever """

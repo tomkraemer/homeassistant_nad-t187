@@ -24,8 +24,13 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the NAD Receiver switch."""
+    #------------START-----------------
+    # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
+    #   Alles, was über Volume, Mute und Inputs hinausgeht,
+    #   wird über den Controller der Zone "Main" abgehandelt
     #coordinator: NADReceiverCoordinator = config_entry.runtime_data
     coordinator: NADReceiverCoordinator = config_entry.runtime_data["Main"]
+    #-------------END-----------------
 
     # Fetch initial data so we have data when entities subscribe
     # await coordinator.async_config_entry_first_refresh()

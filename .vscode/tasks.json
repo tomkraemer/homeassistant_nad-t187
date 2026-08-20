@@ -2,15 +2,22 @@
     "version": "2.0.0",
     "tasks": [
         {
+            // --inplace:               Schreibt Daten direkt in die Zieldatei. Verhindert den renameat-Fehler auf dem Samba-Netzlaufwerk vollständig.
+            // --exclude='.DS_Store':   Ignoriert die macOS-Ordner-Metadaten.
+            // --exclude='._*':         Ignoriert versteckte AppleDouble-Dateien (Metadaten, die macOS für Samba-Freigaben erstellt).
+            // [optional?] --delete     sorgt dafür, dass auf dem Raspi Dateien gelöscht werden, die Sie lokal auf dem Mac gelöscht haben
             "label": "NAD-Deploy",
             "type": "shell",
             // "command": "rsync -av --progress --exclude '.git*' --exclude '.vscode' \"${workspaceFolder}/\" \"/Volumes/config/custom_components/nad/\"",
-            "command": "rsync -av --inplace --progress --exclude='.git*' --exclude='.vscode' --exclude='.DS_Store' --exclude='._*' \"/Users/tom/Coding/Codeberg/homeassistant_nad-t187/\" \"/Volumes/config/custom_components/nad/\"",
+            "command": "rsync -av --inplace --progress --exclude='.git*' --exclude='.vscode' --exclude='.DS_Store' --exclude='._*' \"/Users/tom/Coding/Codeberg/homeassistant_nad-t187/custom_components/nad/\" \"/Volumes/config/custom_components/nad/\"",
             "problemMatcher": [],
             "group": {
                 "kind": "build",
                 "isDefault": true
             } 
+            // So  ausführen: 
+            // Per Shortcut:    Drücken von Cmd + Shift + B. Der Sync startet sofort im Hintergrund-Terminal von VS Code.
+            // Per Menü-Klick:  Klicken oben in VS Code auf Terminal > Run Task... (Task ausführen) und wählen Sie Sync via rsync.
         }
     ]
 }

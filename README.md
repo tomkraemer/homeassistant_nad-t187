@@ -16,12 +16,23 @@
 
 ## Introduction
 
-Home Assistant integration to control NAD receivers over the serial interface or serial
-to network bridges like [esp-link](https://github.com/jeelabs/esp-link).
+Home Assistant integration to control NAD receivers over the serial interface or serial to network bridges like [esp-link](https://github.com/jeelabs/esp-link).
 
+Entstanden auf der Basis der Arbeiten von rrooggiieerr (repo -> https://github.com/rrooggiieerr/homeassistant-nad)
+Tested with my T187. Similar Reveivers may fit w/o garanty
+
+Interfacig the NAD via RS232, serial, telnet is based on https://www.home-assistant.io/integrations/nad. This fundament was already introduced by rrooggiieerr.
 ## Features
 
 - Installation/Configuration through Config Flow UI
+<br><br>
+- Meine Anpassungen:
+    - auf die nötigsten commands reduziert
+    - zwei voll als mediaplayer ausgeprägte Zonen mit voneinander getrenntem  
+        -  on/off, 
+        - volume, 
+        - mute 
+        - input 
 
 ## Installation
 
@@ -30,7 +41,8 @@ to network bridges like [esp-link](https://github.com/jeelabs/esp-link).
 The recommended way to install this Home Assistant integration is by using [HACS][hacs].
 Click the following button to open the integration directly on the HACS integration page.
 
-[![Install NAD from HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tomkraemer&repository=homeassistant-nad&category=integration)
+[![Install NAD from HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tomkraemer&repository=homeassistant_nad-t187&category=integration)
+
 
 Or follow these instructions:
 
