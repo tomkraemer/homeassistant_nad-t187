@@ -1,6 +1,7 @@
 """The NAD Receiver component."""
 
 import logging
+import threading
 from datetime import timedelta
 from typing import Any, Callable
 
@@ -60,11 +61,18 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
     power_state = None
 
     _listener_commands = []
+    _response_stack = []  # Globaler Stack für alle empfangenen Antwortzeilen
+    _stack_lock = None    # Thread-Lock für Stack-Zugriff
 
     def __init__(self, hass, entry: ConfigEntry, zone: str = "Main"):
         # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
         # Default-Zone eingeführt
-        self.zone = zone 
+        self.zone = zone
+        
+        # [v1.0.2][FIX: Response-Stack für konkurrierende Lesezugriffe]
+        # Globaler Stack für alle Antworten, um Zwischenantworten nicht zu verlieren
+        self._response_stack = []
+        self._stack_lock = threading.Lock()
     
         """Initialize NAD Receiver Data Update Coordinator"""
         super().__init__(
@@ -137,6 +145,29 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
         if command not in self._listener_commands:
             self._listener_commands.append(command)
 
+    def _fetch_listener_data(self, data: dict, zone: str) -> dict:
+        """Fetch data for all listener commands. Synchronous method to be run in executor."""
+        for command in self._listener_commands:
+            if command not in data and command.startswith(f"{zone}."):
+                data[command] = self.exec_command(command, "?")
+        return data
+
+    def _add_to_stack(self, line: str):
+        """Füge eine Antwortzeile dem globalen Stack hinzu (thread-safe)."""
+        with self._stack_lock:
+            self._response_stack.append(line)
+            _LOGGER.debug("Stack: added '%s'", line)
+
+    def _search_in_stack(self, prefix: str) -> str | None:
+        """Suche nach Antwort im Stack, entferne sie und gib den Wert zurück."""
+        with self._stack_lock:
+            for line in self._response_stack[:]:
+                if line.startswith(prefix):
+                    self._response_stack.remove(line)
+                    _LOGGER.debug("Stack: found '%s' for prefix '%s'", line, prefix)
+                    return line.split("=", 1)[1]
+            return None
+
     def get_sources(self) -> {}:
         sources = {}
 
@@ -165,7 +196,7 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
         return True
 
-    def exec_command(self, command: str, operator: str, value: Optional = None):
+    def exec_command(self, command: str, operator: str, value: str = None):
         cmd = f"{command}{operator}"
         if value:
             cmd = f"{cmd}{value}"
@@ -175,29 +206,42 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
         try:
             #------------START-----------------
-            # [v1.0.0][FIX: Multi-Respone auslösen]
-            # Wenn parallel mit einer Remote was passiert (Volume+ ...)
-            # kommen hier alle zwischenzeitlichen Änderungen gespiegelt zurück, also z.B.
-            # ... Volume=24  Volume=23 ...
-            # und dann erst die Antwort auf diese Anfrage -> die richtige muss gesucht und gefunden werden
-            #
-            # -- Empfängt ROHE Antwort (kann mehrere Zeilen enthalten, z. B. "Volume=24\nMain.Power=On"):
+            # [v1.0.2][FIX: Response-Stack für konkurrierende Lesezugriffe]
+            # Alle Zeilen aus raw_response werden in den globalen Stack geschrieben,
+            # um Zwischenantworten nicht zu verlieren. Danach wird im Stack nach
+            # der passenden Antwort gesucht (auch wenn raw_response leer war).
+            #------------END-------------------
+            
             raw_response = self.receiver.transport.communicate(cmd)
             _LOGGER.debug("sent: '%s' raw reply: '%s'", cmd, raw_response)
 
-            if not raw_response:
-                raise CommandNotSupportedError()
+            # Alle Zeilen aus der Antwort in den Stack schieben
+            if raw_response:
+                for line in raw_response.splitlines():
+                    line = line.strip()
+                    if line:  # Leere Zeilen ignorieren
+                        self._add_to_stack(line)
 
-            # -- Suche die Zeile, die zur Anfrage passt (z. B. "Main.Power=On")
+            # Suche im Stack nach der Antwort (inkl. der gerade hinzugefügten Zeilen)
             expected_prefix = f"{command}="  # z. B. "Main.Power="
-            for line in raw_response.splitlines():
-                line = line.strip()
-                if line.startswith(expected_prefix):
-                    return line.split("=", 1)[1]  # Gibt nur den Wert zurück (z. B. "On")
+            result = self._search_in_stack(expected_prefix)
+            if result is not None:
+                _LOGGER.debug("sent: '%s' found in stack: '%s'", cmd, result)
+                return result
+
+            # Falls nicht im Stack gefunden, in raw_response suchen (für immediate Antworten)
+            if raw_response:
+                for line in raw_response.splitlines():
+                    line = line.strip()
+                    if line.startswith(expected_prefix):
+                        return line.split("=", 1)[1]
 
             # -- Falls keine passende Zeile gefunden wurde
+            if not raw_response:
+                raise CommandNotSupportedError()
+            
             _LOGGER.error("Error communicating with NAD Receiver (CommandNotSupportedError)")
-            _LOGGER.error("tried '%s'", cmd, )
+            _LOGGER.error("tried '%s'", cmd)
             _LOGGER.error("received (raw): '%s'", raw_response)
             raise CommandNotSupportedError()
             #------------END-------------------
@@ -245,25 +289,23 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
         else:
             self.power_state = MediaPlayerState.OFF
 
+
         data = {}
         #------------START-----------------
         # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
         # jetzt muss auch dei richtige Zone genommen werden
-        #data["Main.Power"] = power_state
         data[f"{self.zone}.Power"] = power_state
         #------------END-------------------
 
-#        _LOGGER.debug("vvvvvvvvvvPREvvvvvvvvvvv  Zone: '%s'", self.zone)
-        for command in self._listener_commands:
-#            _LOGGER.debug(">>>>>>>>>>>  command: '%s'", command)
-            # if command not in data:
-            # [v1.0.0][FIX: nur innerhalb der Zone Staus abfragen]
-            # UND wenn command mit slef.zone beginnt, damit nur commands zur Updating-RFunde gehören, die auch der Zone angehören
-            #   Ansonsten fragt jede Zone alle Stati komplett ab, was Zeitverschwendung, Aufwand & unübersichtlich ist
-            if command not in data and command.startswith(f"{self.zone}."):
-                data[command] = self.exec_command(command, "?")
-#        _LOGGER.debug("^^^^^^^^POST^^^^^^^^^^^^  done ")
+        #------------START-----------------
+        # [v1.0.2][FIX: Schleifen-Block asynchron ausfuehren]
+        # Der Schleifen-Block wird als synchrone Methode ueber den Executor ausgefuehrt
+        data = await self.hass.async_add_executor_job(
+            self._fetch_listener_data, data, self.zone
+        )
+        #------------END-------------------
 
+        return data
         return data
 
 
