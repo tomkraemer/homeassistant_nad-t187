@@ -114,6 +114,17 @@ class TelnetTransport:
         self._reader_thread: Optional[threading.Thread] = None
         self._stop_reading = False
 
+    def _open_connection(self) -> None:
+        if self.telnet:
+            return
+        _LOGGER.debug("Opening telnet connection to: '%s:%s'", self.host, self.port)
+        self.telnet = Telnet(self.host, self.port, self.timeout)
+
+    def close_connection(self) -> None:
+        if self.telnet:
+            self.telnet.close()
+            self.telnet = None
+
     def write(self, cmd: str) -> None:
         """Write a command to the telnet connection."""
         if not self.telnet:
@@ -139,17 +150,6 @@ class TelnetTransport:
             return ""
         except UnicodeError:
             return ""
-
-    def _open_connection(self) -> None:
-        if self.telnet:
-            return
-        _LOGGER.debug("Opening telnet connection to: '%s:%s'", self.host, self.port)
-        self.telnet = Telnet(self.host, self.port, self.timeout)
-
-    def close_connection(self) -> None:
-        if self.telnet:
-            self.telnet.close()
-            self.telnet = None
 
     def start_reader(self) -> None:
         """Start background reader thread."""
@@ -178,14 +178,20 @@ class TelnetTransport:
         while not self._stop_reading:
             try:
                 response = self.read_response()
-                if response and self.coordinator:
-                    self.coordinator._add_to_queue(response)
-                    # Trigger coordinator update
-                    self.coordinator.async_set_updated_data({})
+                if response: 
+                    key = response.split("=", 1)[0]
+                    val = response.split("=", 1)[1]
+                    self.nad_status[key]=val
+                    if self.coordinator:
+                        # Trigger coordinator update
+                        self.coordinator.async_set_updated_data(self.nad_status)
             except Exception as e:
                 _LOGGER.debug("Reader error: %s", e)
             time.sleep(0.01)
         _LOGGER.debug("Telnet reader loop stopped")
+
+
+
 
     def communicate(self, cmd: str) -> str:
         """Write command (alias for write)."""
@@ -200,6 +206,7 @@ class TelnetTransportWrapper:
         self.nad_telnet = TelnetTransport(host, port, timeout)
         self.nad_telnet.coordinator = coordinator
         self.coordinator = coordinator
+        self.nad_status = {}
 
     def write(self, cmd: str) -> None:
         self.nad_telnet.write(cmd)
