@@ -16,7 +16,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from .NADReceiver.receiver import NADReceiver, NADReceiverTCP, NADReceiverTelnet
+from .NADReceiver import NADReceiver, NADReceiverTCP, NADReceiverTelnet
 
 from . import NADReceiverCoordinator
 from .const import (

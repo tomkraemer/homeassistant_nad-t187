@@ -5,10 +5,7 @@ nad_receiver library classes (NADReceiver, NADReceiverTelnet, NADReceiverTCP).
 """
 
 from .transport import SerialPortTransport, TelnetTransportWrapper, NadTransport
-
-# Import CommandNotSupportedError from parent __init__.py
-# This ensures consistency with the rest of the codebase
-from .. import CommandNotSupportedError
+from .exceptions import CommandNotSupportedError
 
 
 class NADReceiver:

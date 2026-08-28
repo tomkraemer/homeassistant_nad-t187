@@ -31,7 +31,8 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import entity_registry
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from .NADReceiver.receiver import NADReceiver, NADReceiverTCP, NADReceiverTelnet
+from .NADReceiver import NADReceiver, NADReceiverTCP, NADReceiverTelnet
+from .NADReceiver.exceptions import CommandNotSupportedError
 
 from .const import (
     CONF_SERIAL_PORT,
@@ -58,10 +59,6 @@ PLATFORMS: list[Platform] = [
     Platform.SELECT,
     Platform.SENSOR,
 ]
-
-
-class CommandNotSupportedError(Exception):
-    """Error to indicate a command is not supported."""
 
 
 class NADReceiverCoordinator(DataUpdateCoordinator):
