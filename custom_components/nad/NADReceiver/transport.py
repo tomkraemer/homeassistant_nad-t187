@@ -1,36 +1,28 @@
 """Local NAD transport implementation based on nad_receiver library.
 
-Includes FIFO queue with timestamps and auto-cleanup from existing implementation.
+Includes FIFO queue with timestamps and background reader for async response handling.
 """
 
-import abc
 import serial
 import threading
 from telnetlib3.telnetlib import Telnet
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 import logging
+import time
 
 _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 1
 
 
-class NadTransport(abc.ABC):
-    """Abstract base class for NAD transport."""
-    
-    @abc.abstractmethod
-    def communicate(self, command: str) -> str:
-        """Send a command and return the response."""
-        pass
-
-
-class SerialPortTransport(NadTransport):
+class SerialPortTransport:
     """Transport for NAD protocol over RS-232."""
 
     def __init__(self, serial_port: str, coordinator=None, timeout: int = DEFAULT_TIMEOUT) -> None:
         """Create RS232 connection."""
         self.coordinator = coordinator
+        self.serial_port = serial_port
         self.ser = serial.Serial(
             serial_port,
             baudrate=115200,
@@ -38,169 +30,187 @@ class SerialPortTransport(NadTransport):
             write_timeout=timeout,
         )
         self.lock = threading.Lock()
-        self.serial_port = serial_port
+        self._reader_thread: Optional[threading.Thread] = None
+        self._stop_reading = False
 
-    def _open_connection(self) -> None:
-        if not self.ser.is_open:
-            self.ser.open()
-            _LOGGER.debug("serial open: %s", self.ser.is_open)
+    def write(self, command: str) -> None:
+        """Write a command to the serial port."""
+        with self.lock:
+            if not self.ser.is_open:
+                self.ser.open()
+                _LOGGER.debug("serial open: %s", self.ser.is_open)
+            self.ser.reset_input_buffer()
+            self.ser.write(f"\r{command}\r".encode("utf-8"))
+            _LOGGER.debug("Serial sent: '%s'", command)
+
+    def read_response(self) -> str:
+        """Read a single response from the serial port."""
+        with self.lock:
+            if not self.ser.is_open:
+                return ""
+            try:
+                msg = self.ser.read_until(serial.CR)
+                if not msg.strip():
+                    msg = self.ser.read_until(serial.CR)
+                return msg.strip().decode()
+            except serial.SerialTimeoutException:
+                return ""
+            except Exception as e:
+                _LOGGER.debug("Serial read error: %s", e)
+                return ""
+
+    def start_reader(self) -> None:
+        """Start background reader thread."""
+        if self._reader_thread is not None and self._reader_thread.is_alive():
+            return
+        
+        self._stop_reading = False
+        self._reader_thread = threading.Thread(
+            target=self._reader_loop,
+            daemon=True
+        )
+        self._reader_thread.start()
+        _LOGGER.debug("Started serial reader thread")
+
+    def stop_reader(self) -> None:
+        """Stop background reader thread."""
+        self._stop_reading = True
+        if self._reader_thread and self._reader_thread.is_alive():
+            self._reader_thread.join(timeout=0.5)
+        self._reader_thread = None
+        _LOGGER.debug("Stopped serial reader thread")
+
+    def _reader_loop(self) -> None:
+        """Continuous reader loop."""
+        _LOGGER.debug("Serial reader loop started")
+        while not self._stop_reading:
+            try:
+                response = self.read_response()
+                if response and self.coordinator:
+                    self.coordinator._add_to_queue(response)
+                    # Trigger coordinator update
+                    self.coordinator.async_set_updated_data({})
+            except Exception as e:
+                _LOGGER.debug("Reader error: %s", e)
+            time.sleep(0.01)  # Small delay to prevent CPU overload
+        _LOGGER.debug("Serial reader loop stopped")
 
     def communicate(self, command: str) -> str:
-        """Send command and return response. Adds responses to coordinator queue if available."""
-        with self.lock:
-            self._open_connection()
-            self.ser.reset_input_buffer()
-            
-            # Send command with NAD protocol format (\r before and after)
-            self.ser.write(f"\r{command}\r".encode("utf-8"))
-            
-            # Read response - NAD responses end with \r
-            msg = self.ser.read_until(serial.CR)
-            if not msg.strip():  # discard '\r' if it was sent
-                msg = self.ser.read_until(serial.CR)
-            
-            assert isinstance(msg, bytes)
-            response = msg.strip().decode()
-            
-            # Add to coordinator queue if available (FIFO with timestamps)
-            if self.coordinator and response:
-                self.coordinator._add_to_queue(response)
-            
-            _LOGGER.debug("Serial sent: '%s' reply: '%s'", command, response)
-            return response
+        """Write command (alias for write)."""
+        self.write(command)
+        return ""
 
 
-class TelnetTransport(NadTransport):
-    """
-    Support NAD amplifiers that use telnet for communication.
-    Known supported model: Nad T787.
-    """
+class TelnetTransport:
+    """Transport for NAD protocol over Telnet."""
 
     def __init__(self, host: str, port: int, timeout: int = DEFAULT_TIMEOUT) -> None:
-        """Create NADTelnet."""
+        """Create Telnet connection."""
         self.telnet: Optional[Telnet] = None
         self.host = host
         self.port = port
         self.timeout = timeout
         self.coordinator = None
+        self._reader_thread: Optional[threading.Thread] = None
+        self._stop_reading = False
 
-    def __del__(self) -> None:
-        try:
-            self.close_connection()
-        except Exception:
-            pass
-
-    def is_open(self) -> bool:
-        return True if self.telnet else False
-
-    def open_connection(self) -> None:
+    def write(self, cmd: str) -> None:
+        """Write a command to the telnet connection."""
+        if not self.telnet:
+            self._open_connection()
         if self.telnet:
-            raise Exception("Connection already open for host '%s:%s'" % (self.host, self.port))
+            try:
+                _LOGGER.debug("Telnet sending: '%s'", cmd)
+                self.telnet.write(f"\n{cmd}\r".encode())
+            except (EOFError, BrokenPipeError, ConnectionResetError):
+                self.close_connection()
 
-        _LOGGER.debug("Open connection to: '%s:%s'", self.host, self.port)
+    def read_response(self) -> str:
+        """Read a single response from the telnet connection."""
+        if not self.telnet:
+            self._open_connection()
+        if not self.telnet:
+            return ""
+        try:
+            rsp = self.telnet.read_until(b"\r", self.timeout)
+            return rsp.strip().decode()
+        except (EOFError, BrokenPipeError, ConnectionResetError):
+            self.close_connection()
+            return ""
+        except UnicodeError:
+            return ""
+
+    def _open_connection(self) -> None:
+        if self.telnet:
+            return
+        _LOGGER.debug("Opening telnet connection to: '%s:%s'", self.host, self.port)
         self.telnet = Telnet(self.host, self.port, self.timeout)
 
     def close_connection(self) -> None:
-        telnet = self.telnet
-        self.telnet = None
-        if telnet:
-            _LOGGER.debug("Close connection to: '%s:%s'", self.host, self.port)
-            telnet.close()
+        if self.telnet:
+            self.telnet.close()
+            self.telnet = None
 
-    def read_until(self, data) -> None:
-        if not self.telnet:
-            raise Exception("Connection is closed")
-        self.telnet.read_until(data, self.timeout)
-
-    def communicate(self, cmd: str) -> str:
-        """Send command and return response. Handles connection automatically."""
-        if not self.telnet:
-            self.open_connection()
+    def start_reader(self) -> None:
+        """Start background reader thread."""
+        if self._reader_thread is not None and self._reader_thread.is_alive():
+            return
         
-        try:
-            _LOGGER.debug("Telnet sending command: '%s'", cmd)
-            self.telnet.write(f"\n{cmd}\r".encode())
+        self._stop_reading = False
+        self._reader_thread = threading.Thread(
+            target=self._reader_loop,
+            daemon=True
+        )
+        self._reader_thread.start()
+        _LOGGER.debug("Started telnet reader thread")
 
-            # Notice NAD response to command ends with \r and starts with \n
-            # E.g. b'\nMain.Power=On\r'
-            rsp = self.telnet.read_until(b"\r", self.timeout)
-            _LOGGER.debug("Telnet read response: '%s'", str(rsp))
-            
-            response = rsp.strip().decode()
-            
-            # Add to coordinator queue if available
-            if self.coordinator and response:
-                self.coordinator._add_to_queue(response)
-            
-            return response
-            
-        except (EOFError, BrokenPipeError, ConnectionResetError) as cc:
-            # Connection closed
-            _LOGGER.debug("Connection closed: %s", cc)
-            self.close_connection()
-            return ""
-        except UnicodeError as ue:
-            # Some unicode error, but connection is open
-            _LOGGER.debug("Unicode error: %s", ue)
-            return ""
+    def stop_reader(self) -> None:
+        """Stop background reader thread."""
+        self._stop_reading = True
+        if self._reader_thread and self._reader_thread.is_alive():
+            self._reader_thread.join(timeout=0.5)
+        self._reader_thread = None
+        _LOGGER.debug("Stopped telnet reader thread")
 
-
-class TelnetTransportWrapper(NadTransport):
-    """
-    Wrapper for TelnetTransport to handle connection issues gracefully.
-    A class to wrap the TelnetTransport in such a way that Home Assistant will not
-    receive any exceptions.
-    """
-    
-    def __init__(self, host: str, port: int, timeout: int = DEFAULT_TIMEOUT, coordinator=None) -> None:
-        """Create NADTelnet."""
-        self.nad_telnet = TelnetTransport(host, port, timeout)
-        self.coordinator = coordinator
-        # Pass coordinator to the underlying transport
-        self.nad_telnet.coordinator = coordinator
-
-    def __del__(self) -> None:
-        """Destroy NADTelnet."""
-        if hasattr(self, 'nad_telnet') and self.nad_telnet:
-            del self.nad_telnet
-
-    def _pre_read(self) -> bool:
-        """Clear initial connection data (e.g., Main.Model response)."""
-        try:
-            self.nad_telnet.read_until("\n".encode())
-        except EOFError as cc:
-            _LOGGER.debug("Connection closed: %s", cc)
-            self.nad_telnet.close_connection()
-            return False
-        except UnicodeError as ue:
-            _LOGGER.debug("Unicode error: %s", ue)
-            return True
-        return True
-
-    def _open_connection(self) -> bool:
-        if self.nad_telnet.is_open():
-            return True
-
-        try:
-            self.nad_telnet.open_connection()
-        except Exception as e:
-            _LOGGER.debug("Connection failed to open: %s", e)
-            return False
-
-        return self._pre_read()
+    def _reader_loop(self) -> None:
+        """Continuous reader loop."""
+        _LOGGER.debug("Telnet reader loop started")
+        while not self._stop_reading:
+            try:
+                response = self.read_response()
+                if response and self.coordinator:
+                    self.coordinator._add_to_queue(response)
+                    # Trigger coordinator update
+                    self.coordinator.async_set_updated_data({})
+            except Exception as e:
+                _LOGGER.debug("Reader error: %s", e)
+            time.sleep(0.01)
+        _LOGGER.debug("Telnet reader loop stopped")
 
     def communicate(self, cmd: str) -> str:
-        """Send command and return response."""
-        rsp = ""
-        if not self._open_connection():
-            return rsp
+        """Write command (alias for write)."""
+        self.write(cmd)
+        return ""
 
-        try:
-            rsp = self.nad_telnet.communicate(cmd)
-        except (EOFError, BrokenPipeError, ConnectionResetError) as cc:
-            _LOGGER.debug("Connection closed: %s", cc)
-            self.nad_telnet.close_connection()
-        except UnicodeError as ue:
-            _LOGGER.debug("Unicode error: %s", ue)
 
-        return rsp
+class TelnetTransportWrapper:
+    """Wrapper for TelnetTransport with graceful error handling."""
+
+    def __init__(self, host: str, port: int, timeout: int = DEFAULT_TIMEOUT, coordinator=None) -> None:
+        self.nad_telnet = TelnetTransport(host, port, timeout)
+        self.nad_telnet.coordinator = coordinator
+        self.coordinator = coordinator
+
+    def write(self, cmd: str) -> None:
+        self.nad_telnet.write(cmd)
+
+    def start_reader(self) -> None:
+        self.nad_telnet.start_reader()
+
+    def stop_reader(self) -> None:
+        self.nad_telnet.stop_reader()
+
+    def communicate(self, cmd: str) -> str:
+        """Write command (alias for write)."""
+        self.write(cmd)
+        return ""
