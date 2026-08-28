@@ -2,7 +2,15 @@
 
 import logging
 import threading
-from datetime import timedelta
+#------------START-----------------
+# [v1.0.2][FIX: Response-Queue mit Timestamps]
+# datetime Import für Timestamp-Verwaltung in der Queue
+# <CODE CHANGED>
+# from datetime import timedelta
+# to:
+# from datetime import datetime, timedelta
+#------------END-----------------
+from datetime import datetime, timedelta
 from typing import Any, Callable
 
 import homeassistant.helpers.config_validation as cv
@@ -31,6 +39,14 @@ from .const import (
     CONF_TYPE_TCP,
     CONF_TYPE_TELNET,
     DOMAIN,
+    CONF_COUNT_OF_SOURCES,
+    #------------START-----------------
+    # [v1.0.2][FIX: Response-Queue Alterungsbegrenzung]
+    # Import der Queue-Lebensdauer-Konstante
+    # <CODE ADDED>
+    # CONF_MAX_READ_QUEUE_LAYTIME,
+    #------------END-----------------
+    CONF_MAX_READ_QUEUE_LAYTIME,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -61,17 +77,32 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
     power_state = None
 
     _listener_commands = []
-    _response_stack = []  # Globaler Stack für alle empfangenen Antwortzeilen
-    _stack_lock = None    # Thread-Lock für Stack-Zugriff
+    #------------START-----------------
+    # [v1.0.2][FIX: Response-Stack zu FIFO-Queue]
+    # Umbenennung von Stack zu Queue für FIFO-Verhalten
+    # <CODE CHANGED>
+    # _response_stack = []  # Globaler Stack für alle empfangenen Antwortzeilen
+    # to:
+    # _response_queue = []  # FIFO-Schlange für alle empfangenen Antwortzeilen
+    #------------END-----------------
+    _response_queue = []  # FIFO-Schlange für alle empfangenen Antwortzeilen
+    _stack_lock = None    # Thread-Lock für Queue-Zugriff
 
     def __init__(self, hass, entry: ConfigEntry, zone: str = "Main"):
         # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
         # Default-Zone eingeführt
         self.zone = zone
         
-        # [v1.0.2][FIX: Response-Stack für konkurrierende Lesezugriffe]
-        # Globaler Stack für alle Antworten, um Zwischenantworten nicht zu verlieren
-        self._response_stack = []
+        # [v1.0.2][FIX: Response-Queue für konkurrierende Lesezugriffe]
+        # FIFO-Schlange für alle Antworten, um Zwischenantworten nicht zu verlieren
+        #------------START-----------------
+        # [v1.0.2][FIX: Response-Queue für konkurrierende Lesezugriffe]
+        # Initialisierung der FIFO-Queue und des Locks
+        # <CODE ADDED>
+        # self._response_queue = []
+        # self._stack_lock = threading.Lock()
+        #------------END-----------------
+        self._response_queue = []
         self._stack_lock = threading.Lock()
     
         """Initialize NAD Receiver Data Update Coordinator"""
@@ -152,26 +183,71 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
                 data[command] = self.exec_command(command, "?")
         return data
 
-    def _add_to_stack(self, line: str):
-        """Füge eine Antwortzeile dem globalen Stack hinzu (thread-safe)."""
+    #------------START-----------------
+    # [v1.0.2][FIX: Response-Queue für konkurrierende Lesezugriffe]
+    # Thread-sicheres Hinzufügen von Antwortzeilen zur Queue mit Timestamp
+    # <CODE ADDED>
+    # def _add_to_queue(self, line: str):
+    #     """Füge eine Antwortzeile der FIFO-Queue hinzu (thread-safe)."""
+    #     with self._stack_lock:
+    #         self._response_queue.append((datetime.now(), line))
+    #         _LOGGER.debug("Queue: added '%s'", line)
+    #------------END-----------------
+    def _add_to_queue(self, line: str):
+        """Füge eine Antwortzeile der FIFO-Queue hinzu (thread-safe)."""
         with self._stack_lock:
-            self._response_stack.append(line)
-            _LOGGER.debug("Stack: added '%s'", line)
+            self._response_queue.append((datetime.now(), line))
+            _LOGGER.debug("Queue: added '%s'", line)
 
-    def _search_in_stack(self, prefix: str) -> str | None:
-        """Suche nach Antwort im Stack, entferne sie und gib den Wert zurück."""
+    #------------START-----------------
+    # [v1.0.2][FIX: Response-Queue Alterungsbegrenzung]
+    # Thread-sicheres Suchen in der Queue mit automatischer Bereinigung 
+    # alter Einträge (>CONF_MAX_READ_QUEUE_LAYTIME)
+    # <CODE ADDED>
+    # def _search_in_queue(self, prefix: str) -> str | None:
+    #     """Suche nach Antwort in der Queue (FIFO), entferne sie und gib den Wert zurück.
+    #     Entfernt vorher alle Einträge, die älter als CONF_MAX_READ_QUEUE_LAYTIME Sekunden sind."""
+    #     with self._stack_lock:
+    #         # Bereinige Queue: Entferne Einträge älter als CONF_MAX_READ_QUEUE_LAYTIME Sekunden
+    #         cutoff = datetime.now() - timedelta(seconds=CONF_MAX_READ_QUEUE_LAYTIME)
+    #         self._response_queue = [(ts, line) for ts, line in self._response_queue if ts >= cutoff]
+    #         
+    #         # FIFO: Durchsuche von vorne nach hinten
+    #         for i, (ts, line) in enumerate(self._response_queue):
+    #             if line.startswith(prefix):
+    #                 # Entferne das Element an Position i
+    #                 del self._response_queue[i]
+    #                 return line.split("=", 1)[1]
+    #         _LOGGER.warning("Queue: NOTHING found for prefix '%s'", prefix)
+    #         return None
+    #------------END-----------------
+    def _search_in_queue(self, prefix: str) -> str | None:
+        """Suche nach Antwort in der Queue (FIFO), entferne sie und gib den Wert zurück.
+        Entfernt vorher alle Einträge, die älter als CONF_MAX_READ_QUEUE_LAYTIME Sekunden sind."""
         with self._stack_lock:
-            for line in self._response_stack[:]:
+            # Bereinige Queue: Entferne Einträge älter als CONF_MAX_READ_QUEUE_LAYTIME Sekunden
+            cutoff = datetime.now() - timedelta(seconds=CONF_MAX_READ_QUEUE_LAYTIME)
+            self._response_queue = [(ts, line) for ts, line in self._response_queue if ts >= cutoff]
+            
+            # FIFO: Durchsuche von vorne nach hinten
+            for i, (ts, line) in enumerate(self._response_queue):
                 if line.startswith(prefix):
-                    self._response_stack.remove(line)
-                    _LOGGER.debug("Stack: found '%s' for prefix '%s'", line, prefix)
+                    # Entferne das Element an Position i
+                    del self._response_queue[i]
                     return line.split("=", 1)[1]
+            _LOGGER.warning("Queue: NOTHING found for prefix '%s'", prefix)
             return None
 
     def get_sources(self) -> {}:
         sources = {}
 
-        for i in range(1, 13):
+        #------------START-----------------
+        # [v1.0.2][FIX: Anzahl der Quellen]
+        # Mein NAD hat nur 10 Quellen
+        # Ist in const.py hinterlegt
+        #for i in range(1, 13):
+        for i in range(1, CONF_COUNT_OF_SOURCES):
+         #------------END-------------------
             try:
                 response = self.exec_command(f"Source{i}.Enabled", "?")
                 if response is not None and response.lower() == "yes":
@@ -186,7 +262,7 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
         try:
             response = self.exec_command(command, "?")
         except CommandNotSupportedError:
-            _LOGGER.debug("%s not supported", command)
+            _LOGGER.warning("%s not supported", command)
             return False
 
         _LOGGER.debug("%s supported", command)
@@ -198,6 +274,13 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
     def exec_command(self, command: str, operator: str, value: str = None):
         cmd = f"{command}{operator}"
+        #------------START-----------------
+        # [v1.0.2][FIX: Response-Queue für konkurrierende Lesezugriffe]
+        # expected_prefix vorab berechnen für Queue-Suche
+        # <CODE ADDED>
+        # expected_prefix = f"{command}="  # z. B. "Main.Power="
+        #------------END-----------------
+        expected_prefix = f"{command}="  # z. B. "Main.Power="
         if value:
             cmd = f"{cmd}{value}"
 
@@ -220,11 +303,27 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
                 for line in raw_response.splitlines():
                     line = line.strip()
                     if line:  # Leere Zeilen ignorieren
-                        self._add_to_stack(line)
+                        #------------START-----------------
+                        # [v1.0.2][FIX: Response-Queue für konkurrierende Lesezugriffe]
+                        # Verwendung der neuen Queue-Methode statt Stack
+                        # <CODE CHANGED>
+                        # self._add_to_stack(line)
+                        # to:
+                        # self._add_to_queue(line)
+                        #------------END-----------------
+                        self._add_to_queue(line)
 
-            # Suche im Stack nach der Antwort (inkl. der gerade hinzugefügten Zeilen)
-            expected_prefix = f"{command}="  # z. B. "Main.Power="
-            result = self._search_in_stack(expected_prefix)
+            # Suche in der Queue nach der Antwort (inkl. der gerade hinzugefügten Zeilen)
+            # expected_prefix = f"{command}="  # z. B. "Main.Power="
+            #------------START-----------------
+            # [v1.0.2][FIX: Response-Queue für konkurrierende Lesezugriffe]
+            # Verwendung der neuen Queue-Methode statt Stack
+            # <CODE CHANGED>
+            # result = self._search_in_stack(expected_prefix)
+            # to:
+            # result = self._search_in_queue(expected_prefix)
+            #------------END-----------------
+            result = self._search_in_queue(expected_prefix)
             if result is not None:
                 _LOGGER.debug("sent: '%s' found in stack: '%s'", cmd, result)
                 return result
@@ -247,7 +346,7 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
             #------------END-------------------
 
         #------------START-----------------
-        # # [v1.0.0][FIX: Timeouts abfangen]
+        # [v1.0.0][FIX: Timeouts abfangen]
         # Timeouts können gelegentlich auftreten (z. B. bei langsamer serieller Verbindung)
         # und werden hier bewusst ignoriert, aber als Debug-Info geloggt, um den
         # normalen Flow nicht zu unterbrechen. Rückgabe: None
@@ -261,6 +360,13 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         """Fetch data from NAD Receiver."""
+        #------------START-----------------
+        # [v1.0.2][FEATURE: Queue-Size Logging]
+        # Logausgabe der aktuellen Queue-Länge zu Debug-Zwecken
+        # <CODE ADDED>
+        # _LOGGER.info("Queue size at start of _async_update_data: %d", len(self._response_queue))
+        #------------END-----------------
+        _LOGGER.info("Queue size at start of _async_update_data: %d", len(self._response_queue))
 
         try:
             #------------START-----------------
