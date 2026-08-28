@@ -28,7 +28,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
     TextSelector,
 )
-from nad_receiver import NADReceiver, NADReceiverTCP, NADReceiverTelnet
+from .NADReceiver.receiver import NADReceiver, NADReceiverTCP, NADReceiverTelnet
 
 from . import CommandNotSupportedError, NADReceiverCoordinator
 from .const import (

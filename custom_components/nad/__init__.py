@@ -31,7 +31,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import entity_registry
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from nad_receiver import NADReceiver, NADReceiverTCP, NADReceiverTelnet
+from .NADReceiver.receiver import NADReceiver, NADReceiverTCP, NADReceiverTelnet
 
 from .const import (
     CONF_SERIAL_PORT,
@@ -122,14 +122,14 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
         config_type = self.config[CONF_TYPE]
         if config_type == CONF_TYPE_SERIAL:
             serial_port = self.config[CONF_SERIAL_PORT]
-            self.receiver = NADReceiver(serial_port)
+            self.receiver = NADReceiver(serial_port, coordinator=self)
         elif config_type == CONF_TYPE_TELNET:
             host = self.config[CONF_HOST]
             port = self.config[CONF_PORT]
-            self.receiver = NADReceiverTelnet(host, port)
+            self.receiver = NADReceiverTelnet(host, port, coordinator=self)
         elif config_type == CONF_TYPE_TCP:
             host = self.config[CONF_HOST]
-            self.receiver = NADReceiverTCP(host)
+            self.receiver = NADReceiverTCP(host, coordinator=self)
 
     async def connect(self) -> bool:
         if not self.model:
