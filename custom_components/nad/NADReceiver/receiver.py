@@ -4,19 +4,27 @@ These are thin wrapper classes that provide the same interface as the original
 nad_receiver library classes (NADReceiver, NADReceiverTelnet, NADReceiverTCP).
 """
 
-from .transport import SerialPortTransport, TelnetTransportWrapper, NadTransport
+import logging
+
+from .transport import SerialPortTransport, TelnetTransport#, TelnetTransportWrapper#, NadTransport
 from .exceptions import CommandNotSupportedError
 
+_LOGGER = logging.getLogger(__name__)
 
 class NADReceiver:
     """RS-232 Receiver (Wrapper for SerialPortTransport)."""
     
     def __init__(self, serial_port: str, coordinator=None) -> None:
         """Create RS232 connection."""
+
         self.transport: NadTransport = SerialPortTransport(serial_port, coordinator)
 
     def main_model(self, operator: str) -> str:
-        """Get the receiver model (for validation in config_flow)."""
+        """
+        Get the receiver model 
+        ONLY USED FOR -> validation in config_flow.
+        """
+
         cmd = f"Main.Model{operator}"
         response = self.transport.communicate(cmd)
         if not response:
@@ -24,7 +32,11 @@ class NADReceiver:
         return response
 
     def main_version(self, operator: str) -> str:
-        """Get the receiver version (for validation in config_flow)."""
+        """
+        Get the receiver FW-Version 
+        ONLY USED FOR -> validation in config_flow.
+        """
+
         cmd = f"Main.Version{operator}"
         response = self.transport.communicate(cmd)
         if not response:
@@ -36,11 +48,19 @@ class NADReceiverTelnet:
     """Telnet Receiver (Wrapper for TelnetTransportWrapper)."""
     
     def __init__(self, host: str, port: int = 23, timeout: int = 1, coordinator=None) -> None:
-        """Create Telnet connection."""
-        self.transport: NadTransport = TelnetTransportWrapper(host, port, timeout, coordinator)
+        """
+        Create Telnet connection.
+        """
+
+#        self.transport: NadTransport = TelnetTransportWrapper(host, port, timeout, coordinator)
+        self.transport: NadTransport = TelnetTransport(host, port, timeout, coordinator)
 
     def main_model(self, operator: str) -> str:
-        """Get the receiver model (for validation in config_flow)."""
+        """
+        Get the receiver model 
+        ONLY USED FOR -> validation in config_flow.
+        """
+
         cmd = f"Main.Model{operator}"
         response = self.transport.communicate(cmd)
         if not response:
@@ -48,14 +68,35 @@ class NADReceiverTelnet:
         return response
 
     def main_version(self, operator: str) -> str:
-        """Get the receiver version (for validation in config_flow)."""
+        """
+        Get the receiver FW-Version 
+        ONLY USED FOR -> validation in config_flow.
+        """
+
         cmd = f"Main.Version{operator}"
         response = self.transport.communicate(cmd)
         if not response:
             raise CommandNotSupportedError()
         return response
 
-
+######################################################################
+# Eine nicht-telnet-konforme TCP-Kommunikation bei Geräten von NAD Electronics 
+# (insbesondere den AV-Receivern und integrierten Verstärkern) haben 
+# vor allem ältere netzwerkfähige AV-Receiver (AVRs), # die über ein 
+# serielles Ethernet-Erweiterungsmodul (wie das VM150X) verfügen, 
+# sowie Modelle wie den NAD T775, T777, T785 und T787
+# Das führt zu folgenden Phänomenen in Smart-Home-Systemen 
+# (z. B. Home Assistant oder Node-RED):
+#   Telnet-Verbindungen schlagen fehl: 
+#   Standard-Telnet-Clients versuchen zu Beginn einer Verbindung, 
+#   Optionen auszuhandeln (Telnet-Handshake/Sonderzeichen). 
+#   Die NAD-Geräte verstehen diese Zeichen nicht, interpretieren 
+#   sie als fehlerhaften Befehl oder stürzen ab.
+#   Verbindungsabbrüche: 
+#   Die TCP-Implementierung baut keine persistente, fehlerbereinigte 
+#   Telnet-Sitzung auf. Trennt sich die Verbindung, bleibt der Port 
+#   am Receiver oft blockiert.
+# ######################################################################
 class NADReceiverTCP:
     """TCP Receiver (for NAD D 7050)."""
     

@@ -178,29 +178,33 @@ class NADReceiverSwitch(CoordinatorEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs) -> None:
         """Turn the entity on."""
         _LOGGER.debug("Turning on %s", self.name)
-        response = self.coordinator.exec_command(self.entity_description.key, "=", "On")
-        if response.lower() == "on":
-            self._attr_is_on = True
-            self._attr_available = True
-        else:
-            _LOGGER.error("Failed to switch on %s", self.name)
-            self._attr_available = False
+        self.coordinator.write_command(self.entity_description.key, "=", "On")
+        # response = self.coordinator.exec_command(self.entity_description.key, "=", "On")
+        # if response.lower() == "on":
+        #     self._attr_is_on = True
+        #     self._attr_available = True
+        # else:
+        #     _LOGGER.error("Failed to switch on %s", self.name)
+        #     self._attr_available = False
 
-        self.async_write_ha_state()
-        # await self.coordinator.async_request_refresh()
+        # self.async_write_ha_state()
+        # # await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs) -> None:
         """Turn the entity off."""
         _LOGGER.debug("Turning off %s", self.name)
-        response = self.coordinator.exec_command(
+        response = self.coordinator.write_command(
             self.entity_description.key, "=", "Off"
         )
-        if response.lower() == "off":
-            self._attr_is_on = False
-            self._attr_available = True
-        else:
-            _LOGGER.error("Failed to switch off %s", self.name)
-            self._attr_available = False
+        # response = self.coordinator.exec_command(
+        #     self.entity_description.key, "=", "Off"
+        # )
+        # if response.lower() == "off":
+        #     self._attr_is_on = False
+        #     self._attr_available = True
+        # else:
+        #     _LOGGER.error("Failed to switch off %s", self.name)
+        #     self._attr_available = False
 
-        self.async_write_ha_state()
-        # await self.coordinator.async_request_refresh()
+        # self.async_write_ha_state()
+        # # await self.coordinator.async_request_refresh()

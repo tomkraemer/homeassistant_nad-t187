@@ -290,17 +290,20 @@ class NADReceiverSelect(CoordinatorEntity, SelectEntity):
             if self._attr_current_option == option:
                 return
 
-            response = self.coordinator.exec_command(
+            self.coordinator.exec_command(
                 self.entity_description.key, "=", option
             )
-            if response is not None:
-                self._attr_current_option = response
-                self._attr_available = True
-            else:
-                _LOGGER.error("Failed to set %s to %s", self.name, option)
-                self._attr_available = False
+            # response = self.coordinator.exec_command(
+            #     self.entity_description.key, "=", option
+            # )
+            # if response is not None:
+            #     self._attr_current_option = response
+            #     self._attr_available = True
+            # else:
+            #     _LOGGER.error("Failed to set %s to %s", self.name, option)
+            #     self._attr_available = False
         else:
             self._attr_available = False
 
-        self.async_write_ha_state()
-        # await self.coordinator.async_request_refresh()
+        # self.async_write_ha_state()
+        # # await self.coordinator.async_request_refresh()

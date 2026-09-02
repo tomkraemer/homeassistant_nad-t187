@@ -18,7 +18,7 @@ from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .NADReceiver import NADReceiver, NADReceiverTCP, NADReceiverTelnet
 
-from . import NADReceiverCoordinator
+from . import NADReceiverCoordinator, log_status_dict
 from .const import (
     CONF_DEFAULT_MAX_VOLUME,
     CONF_DEFAULT_MIN_VOLUME,
@@ -80,8 +80,6 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
     def __init__(self, coordinator: NADReceiverCoordinator):
         """Initialize the NAD Receiver device."""
 
-#        _LOGGER.debug("XXXXX M E D I A P L A Y E R      PRE ++++++++   TEST: Zone: '%s' Unique_ID: '%s'", coordinator.zone, coordinator.unique_id) 
-
         super().__init__(coordinator, self.zone + ".Power")
 
         self._attr_device_info = coordinator.device_info
@@ -100,13 +98,11 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
         coordinator.add_listener_command(self.zone + ".Volume")
         coordinator.add_listener_command(self.zone + ".Source")
 
-#        _LOGGER.debug("XXXXX M E D I A P L A Y E R     POST --------   TEST: Zone: '%s'  Unique_ID: '%s'", coordinator.zone, coordinator.unique_id) 
-
         self._source_dict = coordinator.sources
         self._reverse_mapping = {value: key for key, value in self._source_dict.items()}
 
     async def async_added_to_hass(self) -> None:
-        _LOGGER.debug("async_added_to_hass")
+        # _LOGGER.debug("+++++++++++++++++++++ %s async_added_to_hass +++++++++++++++++++++++", self.zone)
         await super().async_added_to_hass()
 
         self._handle_coordinator_update()
@@ -114,7 +110,7 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        _LOGGER.debug("_handle_coordinator_update")
+        _LOGGER.debug(">>> %s ", self.coordinator.receiver.transport.last_received)
         power_state = self.coordinator.data.get(self.zone + ".Power")
         if power_state is None:
             self._attr_state = None
@@ -143,64 +139,74 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
             source = self.coordinator.data.get(self.zone + ".Source")
             self._attr_source = self._source_dict.get(source)
 
+        # log_status_dict (self.coordinator.receiver.transport.data, "NAD-Data")
+        # log_status_dict (self.coordinator.data, "COORD-Data")
+
         self.async_write_ha_state()
+        # _LOGGER.debug(">>> %s <<<<< _handle_coordinator_update -----------", self.zone)
 
     def turn_off(self) -> None:
         """Turn the media player off."""
-        response = self.coordinator.exec_command(self.zone + ".Power", "=", "Off")
-        if response.lower() == "off":
-            self._attr_state = MediaPlayerState.OFF
-            self.schedule_update_ha_state()
+        # response = self.coordinator.exec_command(self.zone + ".Power", "=", "Off")
+        # if response.lower() == "off":
+        #     self._attr_state = MediaPlayerState.OFF
+        #     self.schedule_update_ha_state()
+        self.coordinator.write_command(self.zone + ".Power", "=", "Off")
 
     def turn_on(self) -> None:
         """Turn the media player on."""
-        response = self.coordinator.exec_command(self.zone + ".Power", "=", "On")
-        if response.lower() == "on":
-            self._attr_state = MediaPlayerState.ON
-            self.schedule_update_ha_state()
+        # response = self.coordinator.exec_command(self.zone + ".Power", "=", "On")
+        # if response.lower() == "on":
+        #     self._attr_state = MediaPlayerState.ON
+        #     self.schedule_update_ha_state()
+        self.coordinator.write_command(self.zone + ".Power", "=", "On")
 
     def volume_up(self) -> None:
         """Volume up the media player."""
-        response = self.coordinator.exec_command(self.zone + ".Volume", "+")
-        if response is not None and response.lstrip("-").isnumeric():
-            self._attr_volume_level = self.calc_volume(float(response))
-            self.schedule_update_ha_state()
+        # response = self.coordinator.exec_command(self.zone + ".Volume", "+")
+        # if response is not None and response.lstrip("-").isnumeric():
+        #     self._attr_volume_level = self.calc_volume(float(response))
+        #     self.schedule_update_ha_state()
+        self.coordinator.write_command(self.zone + ".Volume", "+")
 
     def volume_down(self) -> None:
         """Volume down the media player."""
-        response = self.coordinator.exec_command(self.zone + ".Volume", "-")
-        if response is not None and response.lstrip("-").isnumeric():
-            self._attr_volume_level = self.calc_volume(float(response))
-            self.schedule_update_ha_state()
+        # response = self.coordinator.exec_command(self.zone + ".Volume", "-")
+        # if response is not None and response.lstrip("-").isnumeric():
+        #     self._attr_volume_level = self.calc_volume(float(response))
+        #     self.schedule_update_ha_state()
+        self.coordinator.write_command(self.zone + ".Volume", "-")
 
     def set_volume_level(self, volume: float) -> None:
         """Set volume level, range 0..1."""
-        response = self.coordinator.exec_command(
-            self.zone + ".Volume", "=", int(self.calc_db(volume))
-        )
-        if response is not None and response.lstrip("-").isnumeric():
-            self._attr_volume_level = self.calc_volume(float(response))
-            self.schedule_update_ha_state()
+        vol_db = int(self.calc_db(volume))
+        # response = self.coordinator.exec_command(self.zone + ".Volume", "=", int(self.calc_db(volume)))
+        # if response is not None and response.lstrip("-").isnumeric():
+        #     self._attr_volume_level = self.calc_volume(float(response))
+        #     self.schedule_update_ha_state()
+        self.coordinator.write_command(self.zone + ".Volume", "=", vol_db)
+        # self._attr_volume_level = volume
 
     def mute_volume(self, mute: bool) -> None:
         """Mute (true) or unmute (false) media player."""
         if mute:
-            response = self.coordinator.exec_command(self.zone + ".Mute", "=", "On")
+            # response = self.coordinator.exec_command(self.zone + ".Mute", "=", "On")
+            response = self.coordinator.write_command(self.zone + ".Mute", "=", "On")
         else:
-            response = self.coordinator.exec_command(self.zone + ".Mute", "=", "Off")
+            # response = self.coordinator.exec_command(self.zone + ".Mute", "=", "Off")
+            response = self.coordinator.write_command(self.zone + ".Mute", "=", "Off")
 
-        if mute and response.lower() != "on":
-            _LOGGER.error("Failed to mute volume")
-        elif not mute and response.lower() != "off":
-            _LOGGER.error("Failed to unmute volume")
-        else:
-            _LOGGER.debug("Volume %s", "muted" if mute else "unmuted")
-            self._attr_is_volume_muted = mute
-            self.schedule_update_ha_state()
+        # if mute and response.lower() != "on":
+        #     _LOGGER.error("Failed to mute volume")
+        # elif not mute and response.lower() != "off":
+        #     _LOGGER.error("Failed to unmute volume")
+        # else:
+        #     _LOGGER.debug("Volume %s", "muted" if mute else "unmuted")
+        #     self._attr_is_volume_muted = mute
+        #     self.schedule_update_ha_state()
 
     def select_source(self, source: str) -> None:
         """Select input source."""
-        _LOGGER.debug("select_source(%s)", source)
 
         if source in self._reverse_mapping:
             source_id = self._reverse_mapping[source]
@@ -208,13 +214,13 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
             source_id = source
         else:
             raise HomeAssistantError(f"Source {source} invalid")
+        
+        self.coordinator.write_command(self.zone + ".Source", "=", source_id)
 
-        _LOGGER.debug("Source ID: %s", source_id)
-
-        response = self.coordinator.exec_command(self.zone + ".Source", "=", source_id)
-        if response.isnumeric():
-            self._attr_source = self._source_dict.get(int(response))
-            self.schedule_update_ha_state()
+        # response = self.coordinator.exec_command(self.zone + ".Source", "=", source_id)
+        # if response.isnumeric():
+        #     self._attr_source = self._source_dict.get(int(response))
+        #     self.schedule_update_ha_state()
 
     @property
     def source_list(self):
@@ -279,12 +285,10 @@ class NADMain(NAD):
 
     def __init__(self, coordinator: NADReceiverCoordinator):
         """Initialize the NAD Receiver - Main."""
-
         #------------START-----------------
         # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
         self.zone = "Main"
         #-------------END-----------------
-
         super().__init__(coordinator)
 
         coordinator.add_listener_command(self.zone + ".ListeningMode")
@@ -292,21 +296,27 @@ class NADMain(NAD):
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
+        # _LOGGER.debug("_handle_coordinator_update")
         super()._handle_coordinator_update()
 
         response = self.coordinator.data.get(self.zone + ".ListeningMode")
         if response is not None:
             self._attr_sound_mode = response
-            self.async_write_ha_state()
+        response = self.coordinator.data.get(self.zone + ".Source")
+        if response.isnumeric():
+            self._attr_source = self._source_dict.get(int(response))
+
+        self.schedule_update_ha_state()
 
     def select_sound_mode(self, sound_mode: str) -> None:
         """Select sound mode."""
-        response = self.coordinator.exec_command(
-            self.zone + ".ListeningMode", "=", sound_mode
-        )
-        if response is not None:
-            self._attr_sound_mode = sound_mode
-            self.schedule_update_ha_state()
+        self.coordinator.write_command(self.zone + ".ListeningMode", "=", sound_mode)
+        # response = self.coordinator.exec_command(
+        #     self.zone + ".ListeningMode", "=", sound_mode
+        # )
+        # if response is not None:
+        #     self._attr_sound_mode = sound_mode
+        #     self.schedule_update_ha_state()
 
 
 class NADZone2(NAD):
@@ -326,12 +336,24 @@ class NADZone2(NAD):
 
     def __init__(self, coordinator: NADReceiverCoordinator):
         """Initialize the NAD Receiver device."""
-
         #------------START-----------------
         # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
         self.zone = "Zone2"
         #-------------END-----------------
 
         super().__init__(coordinator)
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        # _LOGGER.debug("_handle_coordinator_update")
+        super()._handle_coordinator_update()
+
+        response = self.coordinator.data.get(self.zone + ".Source")
+        if response.isnumeric():
+            self._attr_source = self._source_dict.get(int(response))
+
+        self.schedule_update_ha_state()
+
 class NADtcp(NAD):
     """Dummy Representation of a NAD Receiver via tcp - why so ever """

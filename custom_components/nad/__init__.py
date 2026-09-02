@@ -61,10 +61,33 @@ PLATFORMS: list[Platform] = [
 ]
 
 
+def log_properties(obj, name):
+    #print(f"--- Eigenschaften von {name} ---")
+    _LOGGER.debug("--- Eigenschaften von %s ---", name)
+    for attr in dir(obj):
+        # Ignoriere private/geschützte Attribute und Methoden
+        if not attr.startswith('_'):
+            try:
+                value = getattr(obj, attr)
+                # Prüfe, ob es sich um eine Methode/Funktion handelt
+                if not callable(value):
+                    #print(f"{attr}: {type(value).__name__} = {value}")
+                    _LOGGER.debug("%s: [%s] - %s", attr, type(value).__name__, value)
+            except Exception as e:
+                #print(f"{attr}: Konnte Wert nicht lesen ({e})")
+                _LOGGER.debug("%s: Konnte Wert nicht lesen (%s)", attr, e)
+
+def log_status_dict (data, name):
+    _LOGGER.debug("--- Inhalt von %s:", name)
+    for k, v in data.items():
+        _LOGGER.debug("DATA CONTENT - key: %s value: %s", k, v)
+
 class NADReceiverCoordinator(DataUpdateCoordinator):
     """NAD Receiver Data Update Coordinator"""
 
     receiver: NADReceiver = None
+
+    should_poll = False
 
     unique_id = None
     model: str = None
@@ -74,33 +97,12 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
     power_state = None
 
     _listener_commands = []
-    #------------START-----------------
-    # [v1.0.2][FIX: Response-Stack zu FIFO-Queue]
-    # Umbenennung von Stack zu Queue für FIFO-Verhalten
-    # <CODE CHANGED>
-    # _response_stack = []  # Globaler Stack für alle empfangenen Antwortzeilen
-    # to:
-    # _response_queue = []  # FIFO-Schlange für alle empfangenen Antwortzeilen
-    #------------END-----------------
-    _response_queue = []  # FIFO-Schlange für alle empfangenen Antwortzeilen
-    _stack_lock = None    # Thread-Lock für Queue-Zugriff
 
     def __init__(self, hass, entry: ConfigEntry, zone: str = "Main"):
         # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
         # Default-Zone eingeführt
         self.zone = zone
-        
-        # [v1.0.2][FIX: Response-Queue für konkurrierende Lesezugriffe]
-        # FIFO-Schlange für alle Antworten, um Zwischenantworten nicht zu verlieren
-        #------------START-----------------
-        # [v1.0.2][FIX: Response-Queue für konkurrierende Lesezugriffe]
-        # Initialisierung der FIFO-Queue und des Locks
-        # <CODE ADDED>
-        # self._response_queue = []
-        # self._stack_lock = threading.Lock()
-        #------------END-----------------
-        self._response_queue = []
-        self._stack_lock = threading.Lock()
+        self.data = {}
     
         """Initialize NAD Receiver Data Update Coordinator"""
         super().__init__(
@@ -109,31 +111,27 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
             # Name of the data. For logging purposes.
             name=__name__,
             # Polling interval. Will only be polled if there are subscribers.
-            update_interval=timedelta(seconds=25),
+            #update_interval=timedelta(seconds=25),
         )
 
         self.config = entry.data
         self.options = entry.options
         self.unique_id = entry.entry_id
+        self.hass = hass
 
         config_type = self.config[CONF_TYPE]
         if config_type == CONF_TYPE_SERIAL:
             serial_port = self.config[CONF_SERIAL_PORT]
             self.receiver = NADReceiver(serial_port, coordinator=self)
-            # Start the reader thread for this transport
-            self.receiver.transport.start_reader()
+
         elif config_type == CONF_TYPE_TELNET:
             host = self.config[CONF_HOST]
             port = self.config[CONF_PORT]
             self.receiver = NADReceiverTelnet(host, port, coordinator=self)
-            # Start the reader thread for this transport
-            self.receiver.transport.start_reader()
+
         elif config_type == CONF_TYPE_TCP:
             host = self.config[CONF_HOST]
             self.receiver = NADReceiverTCP(host, coordinator=self)
-            # Start the reader thread for this transport (if available)
-            if hasattr(self.receiver, 'transport') and hasattr(self.receiver.transport, 'start_reader'):
-                self.receiver.transport.start_reader()
 
     async def connect(self) -> bool:
         if not self.model:
@@ -179,6 +177,8 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
         _LOGGER.debug("Adding command %s", command)
         if command not in self._listener_commands:
             self._listener_commands.append(command)
+            # initialize status with the current value
+            self.exec_command(command, "?")
 
     def _fetch_listener_data(self, data: dict, zone: str) -> dict:
         """Fetch data for all listener commands. Synchronous method to be run in executor."""
@@ -187,61 +187,6 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
                 data[command] = self.exec_command(command, "?")
         return data
 
-    #------------START-----------------
-    # [v1.0.2][FIX: Response-Queue für konkurrierende Lesezugriffe]
-    # Thread-sicheres Hinzufügen von Antwortzeilen zur Queue mit Timestamp
-    # <CODE ADDED>
-    # def _add_to_queue(self, line: str):
-    #     """Füge eine Antwortzeile der FIFO-Queue hinzu (thread-safe)."""
-    #     with self._stack_lock:
-    #         self._response_queue.append((datetime.now(), line))
-    #         _LOGGER.debug("Queue: added '%s'", line)
-    #------------END-----------------
-    # def _add_to_queue(self, line: str):
-    #     """Füge eine Antwortzeile der FIFO-Queue hinzu (thread-safe)."""
-    #     with self._stack_lock:
-    #         self._response_queue.append((datetime.now(), line))
-    #         _LOGGER.debug("Queue: added '%s'", line)
-
-    #------------START-----------------
-    # [v1.0.2][FIX: Response-Queue Alterungsbegrenzung]
-    # Thread-sicheres Suchen in der Queue mit automatischer Bereinigung 
-    # alter Einträge (>CONF_MAX_READ_QUEUE_LAYTIME)
-    # <CODE ADDED>
-    # def _search_in_queue(self, prefix: str) -> str | None:
-    #     """Suche nach Antwort in der Queue (FIFO), entferne sie und gib den Wert zurück.
-    #     Entfernt vorher alle Einträge, die älter als CONF_MAX_READ_QUEUE_LAYTIME Sekunden sind."""
-    #     with self._stack_lock:
-    #         # Bereinige Queue: Entferne Einträge älter als CONF_MAX_READ_QUEUE_LAYTIME Sekunden
-    #         cutoff = datetime.now() - timedelta(seconds=CONF_MAX_READ_QUEUE_LAYTIME)
-    #         self._response_queue = [(ts, line) for ts, line in self._response_queue if ts >= cutoff]
-    #         
-    #         # FIFO: Durchsuche von vorne nach hinten
-    #         for i, (ts, line) in enumerate(self._response_queue):
-    #             if line.startswith(prefix):
-    #                 # Entferne das Element an Position i
-    #                 del self._response_queue[i]
-    #                 return line.split("=", 1)[1]
-    #         _LOGGER.warning("Queue: NOTHING found for prefix '%s'", prefix)
-    #         return None
-    #------------END-----------------
-    # def _search_in_queue(self, prefix: str) -> str | None:
-    #     """Suche nach Antwort in der Queue (FIFO), entferne sie und gib den Wert zurück.
-    #     Entfernt vorher alle Einträge, die älter als CONF_MAX_READ_QUEUE_LAYTIME Sekunden sind."""
-    #     with self._stack_lock:
-    #         # Bereinige Queue: Entferne Einträge älter als CONF_MAX_READ_QUEUE_LAYTIME Sekunden
-    #         cutoff = datetime.now() - timedelta(seconds=CONF_MAX_READ_QUEUE_LAYTIME)
-    #         self._response_queue = [(ts, line) for ts, line in self._response_queue if ts >= cutoff]
-            
-    #         # FIFO: Durchsuche von vorne nach hinten
-    #         for i, (ts, line) in enumerate(self._response_queue):
-    #             if line.startswith(prefix):
-    #                 # Entferne das Element an Position i
-    #                 del self._response_queue[i]
-    #                 return line.split("=", 1)[1]
-    #         _LOGGER.warning("Queue: NOTHING found for prefix '%s'", prefix)
-    #         return None
-
     def get_sources(self) -> {}:
         sources = {}
 
@@ -249,7 +194,6 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
         # [v1.0.2][FIX: Anzahl der Quellen]
         # Mein NAD hat nur 10 Quellen
         # Ist in const.py hinterlegt
-        #for i in range(1, 13):
         for i in range(1, CONF_COUNT_OF_SOURCES):
         #------------END-------------------
             try:
@@ -259,7 +203,6 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
                     sources[i] = response
             except CommandNotSupportedError:
                 break
-
         return sources
 
     def supports_command(self, command: str):
@@ -270,12 +213,21 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
             return False
 
         _LOGGER.debug("%s supported", command)
-        if not self.data:
-            self.data = {}
+        # initialize status with the current value
+        # if not self.data:
+        #     self.data = {}
         self.data[command] = response
 
         return True
 
+    def write_command(self, command: str, operator: str, value: str = None):
+        cmd = f"{command}{operator}"
+        if value:
+            cmd = f"{cmd}{value}"
+        if self.config[CONF_TYPE] == CONF_TYPE_SERIAL:
+            self.receiver.transport.ser.reset_input_buffer()
+        return self.receiver.transport.write_command(cmd)
+    
     def exec_command(self, command: str, operator: str, value: str = None):
         cmd = f"{command}{operator}"
         #------------START-----------------
@@ -291,9 +243,9 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
         if self.config[CONF_TYPE] == CONF_TYPE_SERIAL:
             self.receiver.transport.ser.reset_input_buffer()
 
-        self.receiver.transport.communicate(cmd)
+        return self.receiver.transport.communicate(cmd)
 
-        return
+        
     
         try:
             # With the new writer/reader pattern, communicate() just writes the command
@@ -326,27 +278,24 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
             raise CommandNotSupportedError()
 
     async def _async_update_data(self):
-        """return Status of NAD Receiver."""
-        
-        data = self.receiver.transport.nad_status
-        power_state = data[f"{self.zone}.Power"]
-
-        if not power_state:
-            self.power_state = None
-            raise UpdateFailed("Error communicating with NAD Receiver") 
-
-        return data
+        _LOGGER.info(" Async Update ")
 
     
-        """Fetch data from NAD Receiver."""
+    async def _async_update_data(self):
+        """return Status of NAD Receiver."""
+        
+        data = self.receiver.transport.data
 
-        #------------START-----------------
-        # [v1.0.2][FEATURE: Queue-Size Logging]
-        # Logausgabe der aktuellen Queue-Länge zu Debug-Zwecken
-        # <CODE ADDED>
-        # _LOGGER.info("Queue size at start of _async_update_data: %d", len(self._response_queue))
-        #------------END-----------------
-        _LOGGER.info("Queue size at start of _async_update_data: %d", len(self._response_queue))
+        # Debug-Ausgabe: Inhalt von data zeilenweise
+        # log_status_dict (data, "NAD-Data")
+
+        # power_state = data[f"{self.zone}.Power"]
+
+        # if not power_state:
+        #     self.power_state = None
+        #     raise UpdateFailed("Error communicating with NAD Receiver") 
+    
+        # """Fetch data from NAD Receiver."""
 
         try:
             #------------START-----------------
@@ -364,13 +313,12 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
             _LOGGER.error("Error communicating with NAD Receiver (IOError). Tried '%s'.power?", self.zone)
             raise UpdateFailed("Error communicating with NAD Receiver (IOError)", ex)
 
-        _LOGGER.debug("power_state: %s", power_state)
-
         if power_state.lower() == "on":
             self.power_state = MediaPlayerState.ON
         else:
             self.power_state = MediaPlayerState.OFF
 
+        return data
 
         data = {}
         #------------START-----------------
@@ -398,9 +346,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     def _async_migrate_entity_entry(
         registry_entry: entity_registry.RegistryEntry,
     ) -> dict[str, Any] | None:
-        """
-        Migrates old unique ID to the new unique ID.
-        """
+        """ Migrates old unique ID to the new unique ID. """
         if entry.data[CONF_TYPE] == CONF_TYPE_SERIAL:
             if registry_entry.unique_id.startswith(f"{entry.data[CONF_SERIAL_PORT]}-"):
                 new_unique_id = registry_entry.unique_id.replace(
@@ -413,9 +359,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # No migration needed
         return None
 
-    await entity_registry.async_migrate_entries(
-        hass, entry.entry_id, _async_migrate_entity_entry
-    )
+    await entity_registry.async_migrate_entries(hass, entry.entry_id, _async_migrate_entity_entry)
 
     try:
         #------------START-----------------
@@ -453,6 +397,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     #-------------END-----------------
     
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    
+    # config_type = coordinators["Main"].config[CONF_TYPE]
+    # Start the reader thread for this transport
+    # We only need ONE Read-Loop. Choosing "Main" as the always present zone
+    # Start the reader thread for this transport (if available)
+    receiver = coordinators["Main"].receiver
+    if hasattr(receiver, 'transport') and hasattr(receiver.transport, 'start_reader'):
+        receiver.transport.start_reader()
+
+    data = receiver.transport.data
+    # provide an overview of the data collected so far in the status:
+    log_status_dict (data, "NAD-Status")
 
     entry.async_on_unload(entry.add_update_listener(update_listener))
 

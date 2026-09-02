@@ -462,21 +462,23 @@ class NADReceiverNumber(CoordinatorEntity, NumberEntity):
                 return
 
             if self.step < 1:
-                response = self.coordinator.exec_command(
-                    self.entity_description.key, "=", value
-                )
+                # response = self.coordinator.exec_command(
+                #     self.entity_description.key, "=", value
+                # )
+                self.coordinator.write_command(self.entity_description.key, "=", value)
             else:
-                response = self.coordinator.exec_command(
-                    self.entity_description.key, "=", int(value)
-                )
-            if response.lstrip("-").replace(".", "", 1).isnumeric():
-                self._attr_native_value = float(response)
-                self._attr_available = True
-            else:
-                _LOGGER.error("Failed to set %s to %s", self.name, value)
-                self._attr_available = False
-        else:
-            self._attr_available = False
+                # response = self.coordinator.exec_command(
+                #     self.entity_description.key, "=", int(value)
+                # )
+                self.coordinator.write_command(self.entity_description.key, "=", int(value))
+        #     if response.lstrip("-").replace(".", "", 1).isnumeric():
+        #         self._attr_native_value = float(response)
+        #         self._attr_available = True
+        #     else:
+        #         _LOGGER.error("Failed to set %s to %s", self.name, value)
+        #         self._attr_available = False
+        # else:
+        #     self._attr_available = False
 
-        self.async_write_ha_state()
-        # await self.coordinator.async_request_refresh()
+        # self.async_write_ha_state()
+        # # await self.coordinator.async_request_refresh()
