@@ -29,7 +29,7 @@ async def async_setup_entry(
     #-------------END-----------------
 
     # Fetch initial data so we have data when entities subscribe
-    # await coordinator.async_config_entry_first_refresh()
+    await coordinator.async_config_entry_first_refresh()
 
     entity_descriptions = [
         SelectEntityDescription(
@@ -228,8 +228,8 @@ async def async_setup_entry(
         if coordinator.supports_command(entity_description.key):
             #-----------------------------
             # Nutze passenden Coordinator (Main sollte i.d.R passen)
-#            entities.append(NADReceiverSelect(coordinators["Main"], entity_description))
             #-----------------------------
+            # entities.append(NADReceiverSelect(coordinators["Main"], entity_description))
             entities.append(NADReceiverSelect(coordinator, entity_description))
 
     async_add_entities(entities)
@@ -290,20 +290,6 @@ class NADReceiverSelect(CoordinatorEntity, SelectEntity):
             if self._attr_current_option == option:
                 return
 
-            self.coordinator.exec_command(
-                self.entity_description.key, "=", option
-            )
-            # response = self.coordinator.exec_command(
-            #     self.entity_description.key, "=", option
-            # )
-            # if response is not None:
-            #     self._attr_current_option = response
-            #     self._attr_available = True
-            # else:
-            #     _LOGGER.error("Failed to set %s to %s", self.name, option)
-            #     self._attr_available = False
+            self.coordinator.exec_command(self.entity_description.key, "=", option)
         else:
             self._attr_available = False
-
-        # self.async_write_ha_state()
-        # # await self.coordinator.async_request_refresh()

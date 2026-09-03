@@ -1,44 +1,66 @@
 """Local NAD receiver classes for compatibility with existing code.
 
 These are thin wrapper classes that provide the same interface as the original
-nad_receiver library classes (NADReceiver, NADReceiverTelnet, NADReceiverTCP).
+nad_receiver library classes (NADReceiverSerial, NADReceiverTelnet, NADReceiverTCP).
 """
 
 import logging
+import serial
 
-from .transport import SerialPortTransport, TelnetTransport#, TelnetTransportWrapper#, NadTransport
+from .transport import NADTransport, SerialPortTransport, TelnetTransport
 from .exceptions import CommandNotSupportedError
+from typing import Optional, Protocol, runtime_checkable 
+
+from homeassistant.exceptions import ConfigEntryNotReady
+
 
 _LOGGER = logging.getLogger(__name__)
 
-class NADReceiver:
+class NADReceiver(Protocol):
+    """Interface für alle NAD-Receivert-Klassen."""
+    transport: NADTransport = None # type: ignore
+    def connect(self) -> None: ...
+    def close(self) -> None: ...
+    def main_model(self, operator: str) -> str: ...
+    def main_version(self, operator: str) -> str: ...
+    
+class NADReceiverSerial:
     """RS-232 Receiver (Wrapper for SerialPortTransport)."""
     
     def __init__(self, serial_port: str, coordinator=None) -> None:
-        """Create RS232 connection."""
+        """Create RS232 connection.
+        """
+        self.transport: NADTransport = SerialPortTransport(serial_port, coordinator)
 
-        self.transport: NadTransport = SerialPortTransport(serial_port, coordinator)
+    def connect (self):
+        """        Connect to the reveiver
+        """
+        try:
+            self.transport.open_connection()
+        except serial.SerialException as ex:
+            raise ConfigEntryNotReady(f"Unable to connect to NAD receiver") from ex
+
+    def close (self):
+        """        Close the connection to the reveiver
+        """
+        self.transport.close_connection()
 
     def main_model(self, operator: str) -> str:
-        """
-        Get the receiver model 
+        """        Get the receiver model 
         ONLY USED FOR -> validation in config_flow.
         """
-
         cmd = f"Main.Model{operator}"
-        response = self.transport.communicate(cmd)
+        response = self.transport.exec_command(cmd)
         if not response:
             raise CommandNotSupportedError()
         return response
 
     def main_version(self, operator: str) -> str:
-        """
-        Get the receiver FW-Version 
+        """        Get the receiver FW-Version 
         ONLY USED FOR -> validation in config_flow.
         """
-
         cmd = f"Main.Version{operator}"
-        response = self.transport.communicate(cmd)
+        response = self.transport.exec_command(cmd)
         if not response:
             raise CommandNotSupportedError()
         return response
@@ -48,56 +70,64 @@ class NADReceiverTelnet:
     """Telnet Receiver (Wrapper for TelnetTransportWrapper)."""
     
     def __init__(self, host: str, port: int = 23, timeout: int = 1, coordinator=None) -> None:
+        """        Create Telnet connection.
         """
-        Create Telnet connection.
-        """
+        self.transport: NADTransport = TelnetTransport(host, port, timeout, coordinator)
 
-#        self.transport: NadTransport = TelnetTransportWrapper(host, port, timeout, coordinator)
-        self.transport: NadTransport = TelnetTransport(host, port, timeout, coordinator)
+    def connect (self):
+        """        Connect to the reveiver        
+        """
+        try:
+            self.transport.open_connection()
+        except serial.SerialException as ex:
+            raise ConfigEntryNotReady(f"Unable to connect to NAD receiver") from ex
+
+    def close (self):
+        """        Close the connection to the reveiver        
+        """
+        self.transport.close_connection()
 
     def main_model(self, operator: str) -> str:
-        """
-        Get the receiver model 
+        """        Get the receiver model 
         ONLY USED FOR -> validation in config_flow.
         """
-
         cmd = f"Main.Model{operator}"
-        response = self.transport.communicate(cmd)
+        response = self.transport.exec_command(cmd)
         if not response:
             raise CommandNotSupportedError()
         return response
 
     def main_version(self, operator: str) -> str:
-        """
-        Get the receiver FW-Version 
+        """        Get the receiver FW-Version 
         ONLY USED FOR -> validation in config_flow.
         """
-
         cmd = f"Main.Version{operator}"
-        response = self.transport.communicate(cmd)
+        response = self.transport.exec_command(cmd)
         if not response:
             raise CommandNotSupportedError()
         return response
 
-######################################################################
-# Eine nicht-telnet-konforme TCP-Kommunikation bei Geräten von NAD Electronics 
-# (insbesondere den AV-Receivern und integrierten Verstärkern) haben 
-# vor allem ältere netzwerkfähige AV-Receiver (AVRs), # die über ein 
-# serielles Ethernet-Erweiterungsmodul (wie das VM150X) verfügen, 
-# sowie Modelle wie den NAD T775, T777, T785 und T787
-# Das führt zu folgenden Phänomenen in Smart-Home-Systemen 
-# (z. B. Home Assistant oder Node-RED):
-#   Telnet-Verbindungen schlagen fehl: 
-#   Standard-Telnet-Clients versuchen zu Beginn einer Verbindung, 
-#   Optionen auszuhandeln (Telnet-Handshake/Sonderzeichen). 
-#   Die NAD-Geräte verstehen diese Zeichen nicht, interpretieren 
-#   sie als fehlerhaften Befehl oder stürzen ab.
-#   Verbindungsabbrüche: 
-#   Die TCP-Implementierung baut keine persistente, fehlerbereinigte 
-#   Telnet-Sitzung auf. Trennt sich die Verbindung, bleibt der Port 
-#   am Receiver oft blockiert.
-# ######################################################################
+
 class NADReceiverTCP:
+    ######################################################################
+    # Eine nicht-telnet-konforme TCP-Kommunikation bei Geräten von NAD Electronics 
+    # (insbesondere den AV-Receivern und integrierten Verstärkern) haben 
+    # vor allem ältere netzwerkfähige AV-Receiver (AVRs), # die über ein 
+    # serielles Ethernet-Erweiterungsmodul (wie das VM150X) verfügen, 
+    # sowie Modelle wie den NAD T775, T777, T785 und T787
+    # Das führt zu folgenden Phänomenen in Smart-Home-Systemen 
+    # (z. B. Home Assistant oder Node-RED):
+    #   Telnet-Verbindungen schlagen fehl: 
+    #   Standard-Telnet-Clients versuchen zu Beginn einer Verbindung, 
+    #   Optionen auszuhandeln (Telnet-Handshake/Sonderzeichen). 
+    #   Die NAD-Geräte verstehen diese Zeichen nicht, interpretieren 
+    #   sie als fehlerhaften Befehl oder stürzen ab.
+    #   Verbindungsabbrüche: 
+    #   Die TCP-Implementierung baut keine persistente, fehlerbereinigte 
+    #   Telnet-Sitzung auf. Trennt sich die Verbindung, bleibt der Port 
+    #   am Receiver oft blockiert.
+    # ######################################################################
+
     """TCP Receiver (for NAD D 7050)."""
     
     POLL_VOLUME = "0001020204"
@@ -172,7 +202,7 @@ class NADReceiverTCP:
                     tries += 1
         return ""
 
-    def communicate(self, cmd: str) -> str:
+    def exec_command(self, cmd: str) -> str:
         """Send command via TCP and return response."""
         # For TCP, commands are hex-encoded
         # This is a simplified version - the original NADReceiverTCP uses

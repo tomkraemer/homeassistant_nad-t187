@@ -169,7 +169,7 @@ def exec_command(self, command: str, operator: str, value: Optional = None):
     
     try:
         # Befehl senden und Antwort empfangen
-        msg = self.receiver.transport.communicate(cmd)
+        msg = self.receiver.transport.exec_command(cmd)
         _LOGGER.debug("sent: '%s' reply: '%s'", command, msg)
         
         # Leere Antwort = Befehl nicht unterstützt
@@ -1272,7 +1272,7 @@ class MockNADReceiver:
             "Main.Version": "1.0.0",
         }
     
-    def communicate(self, cmd):
+    def exec_command(self, cmd):
         if cmd == "Main.Power?":
             return "Main.Power=On"
         elif cmd == "Main.Volume?":

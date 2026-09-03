@@ -41,7 +41,7 @@ async def async_setup_entry(
     #-------------END-----------------
 
     # Fetch initial data so we have data when entities subscribe
-    # await coordinator.async_config_entry_first_refresh()
+    await coordinator.async_config_entry_first_refresh()
 
     entity_descriptions = [
         NumberEntityDescription(
@@ -308,7 +308,7 @@ async def async_setup_entry(
         NumberEntityDescription(
             key="Main.Treble",
             name="Treble Tone Control",
-            native_unit_of_measurement=UnitOfFrequency.HERTZ,
+            native_unit_of_measurement=UnitOfSoundPressure.DECIBEL,
             native_min_value=-10,
             native_max_value=10,
             native_step=2,
@@ -343,6 +343,7 @@ async def async_setup_entry(
         NumberEntityDescription(
             key="Main.Trim.Center",
             name="Trim Level Center",
+            native_unit_of_measurement=UnitOfSoundPressure.DECIBEL,            
             native_min_value=-6,
             native_max_value=6,
         ),
@@ -355,6 +356,7 @@ async def async_setup_entry(
         NumberEntityDescription(
             key="Main.Trim.Surround",
             name="Trim Level Surround",
+            native_unit_of_measurement=UnitOfSoundPressure.DECIBEL,
             native_min_value=-6,
             native_max_value=6,
         ),
@@ -400,8 +402,8 @@ async def async_setup_entry(
         if coordinator.supports_command(entity_description.key):
             #-----------------------------
             # Nutze passenden Coordinator (Main sollte i.d.R passen)
-#            entities.append(NADReceiverSelect(coordinators["Main"], entity_description))
             #-----------------------------
+            # entities.append(NADReceiverSelect(coordinators["Main"], entity_description))
             entities.append(NADReceiverNumber(coordinator, entity_description))
 
     async_add_entities(entities)
@@ -456,29 +458,12 @@ class NADReceiverNumber(CoordinatorEntity, NumberEntity):
         return self.coordinator.last_update_success
 
     async def async_set_native_value(self, value: float) -> None:
-        _LOGGER.debug("async_set_native_value")
+        _LOGGER.debug("async_set_native_value - on/off: %s - %s==%s?", self.coordinator.power_state, self._attr_native_value, value)
         if self.coordinator.power_state == MediaPlayerState.ON:
             if self._attr_native_value == value:
                 return
 
             if self.step < 1:
-                # response = self.coordinator.exec_command(
-                #     self.entity_description.key, "=", value
-                # )
                 self.coordinator.write_command(self.entity_description.key, "=", value)
             else:
-                # response = self.coordinator.exec_command(
-                #     self.entity_description.key, "=", int(value)
-                # )
                 self.coordinator.write_command(self.entity_description.key, "=", int(value))
-        #     if response.lstrip("-").replace(".", "", 1).isnumeric():
-        #         self._attr_native_value = float(response)
-        #         self._attr_available = True
-        #     else:
-        #         _LOGGER.error("Failed to set %s to %s", self.name, value)
-        #         self._attr_available = False
-        # else:
-        #     self._attr_available = False
-
-        # self.async_write_ha_state()
-        # # await self.coordinator.async_request_refresh()

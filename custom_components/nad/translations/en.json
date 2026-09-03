@@ -33,7 +33,7 @@
                 },
 				"data_description": {
 					"host": "The hostname or IP address of the NAD receiver.",
-					"port": "The port number needed to communicate with the receiver. 53 is the default port for native network connected receivers but if a serial to network bridges like esp-link is used port 23 might need to be selected."
+					"port": "The port number needed to exec_command with the receiver. 53 is the default port for native network connected receivers but if a serial to network bridges like esp-link is used port 23 might need to be selected."
 				}
             },
             "setup_tcp": {

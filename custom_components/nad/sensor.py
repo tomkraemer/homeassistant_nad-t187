@@ -34,7 +34,7 @@ async def async_setup_entry(
     #-------------END-----------------
 
     # Fetch initial data so we have data when entities subscribe
-    # await coordinator.async_config_entry_first_refresh()
+    await coordinator.async_config_entry_first_refresh()
 
     entity_descriptions = [
         # SensorEntityDescription(
@@ -118,8 +118,9 @@ class NADReceiverSensor(CoordinatorEntity, SensorEntity):
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
 
-        if self.coordinator.data and (
-            new_value := self.coordinator.data.get(self.entity_description.key)
+        if (
+            self.coordinator.data 
+            and (new_value := self.coordinator.data.get(self.entity_description.key))
         ):
             self._attr_native_value = new_value
             self._attr_available = True

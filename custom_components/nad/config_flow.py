@@ -28,7 +28,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
     TextSelector,
 )
-from .NADReceiver import NADReceiver, NADReceiverTCP, NADReceiverTelnet
+from .NADReceiver import NADReceiverSerial, NADReceiverTCP, NADReceiverTelnet
 
 from . import CommandNotSupportedError, NADReceiverCoordinator
 from .const import (
@@ -193,7 +193,7 @@ class NADReceiverConfigFlow(ConfigFlow, domain=DOMAIN):
         if errors.get(CONF_SERIAL_PORT) is None:
             # Test if we can connect to the device and get model
             try:
-                receiver = NADReceiver(serial_port)
+                receiver = NADReceiverSerial(serial_port)
             except (serial.SerialException, CommandNotSupportedError):
                 errors["base"] = "cannot_connect"
             else:

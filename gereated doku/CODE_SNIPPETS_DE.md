@@ -81,7 +81,7 @@ def exec_command(self, command: str, operator: str, value: Optional = None):
     
     try:
         # Befehl senden und Antwort empfangen
-        msg = self.receiver.transport.communicate(cmd)
+        msg = self.receiver.transport.exec_command(cmd)
         _LOGGER.debug("sent: '%s' reply: '%s'", command, msg)
         
         # Leere Antwort = Befehl nicht unterstützt
