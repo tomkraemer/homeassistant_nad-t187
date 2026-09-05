@@ -86,7 +86,7 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
     model: str = None
     version: str = None
     device_info: DeviceInfo = None
-    power_state = None
+    # power_state = None
 
     _listener_commands = []
 
@@ -95,7 +95,8 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
         # Default-Zone eingeführt
         self.zone = zone
         # self.data = {}
-    
+        self.initialized = False
+        
         """Initialize NAD Receiver Data Update Coordinator"""
         super().__init__(
             hass,
@@ -105,6 +106,9 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
             # Polling interval. Will only be polled if there are subscribers.
             #update_interval=timedelta(seconds=25),
         )
+
+        # _LOGGER.debug("INIT -boot- NADReceiverCoordinator - config_entry: %s", entry)
+        # _LOGGER.debug("INIT -boot- NADReceiverCoordinator - self: %s", self)
 
         self.config = entry.data
         self.options = entry.options
@@ -124,33 +128,15 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
         elif config_type == CONF_TYPE_TCP:
             host = self.config[CONF_HOST]
             self.receiver = NADReceiverTCP(host, coordinator=self)
-
-        # try:
-        #     self.receiver.connect()
-        # except serial.SerialException as ex:
-        #     raise ConfigEntryNotReady(f"Unable to connect to NAD receiver") from ex
         
-        # try:
-        #     self.model = self.exec_command("Main.Model", "?")
-        #     self.version = self.exec_command("Main.Version", "?")
-        # except CommandNotSupportedError:
-        #     return False
 
-        # identifiers = {(DOMAIN, self.unique_id)}
-        # if self.config[CONF_TYPE] == CONF_TYPE_SERIAL:
-        #     identifiers.add((DOMAIN, self.config[CONF_SERIAL_PORT]))
+    def is_available(self):
+        try:
+            res = self.receiver.transport.available
+        except:
+            res = false
+        return res
 
-        # self.device_info = DeviceInfo(
-        #     identifiers=identifiers,
-        #     name=f"NAD {self.model}",
-        #     model=self.model,
-        #     manufacturer="NAD",
-        #     sw_version=self.version,
-        # )
-
-        # self.sources = self.get_sources()
-
-        
     async def connect(self) -> bool:
         if not self.model:
             # Open the connection by requesting the model
@@ -176,8 +162,10 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
             return True
 
+
     async def disconnect(self):
         pass
+
 
     @callback
     def async_add_listener(
@@ -196,23 +184,12 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
         if command not in self._listener_commands:
             self._listener_commands.append(command)
             # initialize status with the current value
-            self.exec_command(command, "?")
-
-    # def _fetch_listener_data(self, data: dict, zone: str) -> dict:
-    #     """Fetch data for all listener commands. Synchronous method to be run in executor."""
-    #     for command in self._listener_commands:
-    #         if command not in data and command.startswith(f"{zone}."):
-    #             data[command] = self.exec_command(command, "?")
-    #     return data
+            # self.exec_command(command, "?")
 
     def get_sources(self) -> {}:
         sources = {}
 
-        #------------START-----------------
-        # [v1.0.2][FIX: Anzahl der Quellen]
-        # Mein NAD hat nur 10 Quellen
-        # Ist in const.py hinterlegt
-        for i in range(1, CONF_COUNT_OF_SOURCES):
+        for i in range(1, CONF_COUNT_OF_SOURCES+1):
         #------------END-------------------
             try:
                 response = self.exec_command(f"Source{i}.Enabled", "?")
@@ -225,65 +202,31 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
 
     def supports_command(self, command: str):
         try:
-            response = self.exec_command(command, "?")
+            self.exec_command(command, "?")
         except CommandNotSupportedError:
             _LOGGER.warning("%s not supported", command)
             return False
-
-        # _LOGGER.debug("%s supported", command)
-        # # initialize status with the current value
-        # self.data[command] = response
-
         return True
 
-    def write_command(self, command: str, operator: str, value: str = None):
+    def write_command(self, command: str, operator: str, value: str):
         cmd = f"{command}{operator}"
         if value:
             cmd = f"{cmd}{value}"
-        if self.config[CONF_TYPE] == CONF_TYPE_SERIAL:
-            self.receiver.transport.ser.reset_input_buffer()
-        return self.receiver.transport.write_command(cmd)
+        return self.receiver.write_command(cmd)
     
     def exec_command(self, command: str, operator: str, value: str = None):
         cmd = f"{command}{operator}"
-        #------------START-----------------
-        # [v1.0.2][FIX: Response-Queue für konkurrierende Lesezugriffe]
-        # expected_prefix vorab berechnen für Queue-Suche
-        # <CODE ADDED>
-        # expected_prefix = f"{command}="  # z. B. "Main.Power="
-        #------------END-----------------
-        expected_prefix = f"{command}="  # z. B. "Main.Power="
         if value:
             cmd = f"{cmd}{value}"
+        res = self.receiver.exec_command(cmd)
+        # _LOGGER.debug("exec_command: '%s' -> '%s", cmd, res)
+        return res
 
-        if self.config[CONF_TYPE] == CONF_TYPE_SERIAL:
-            self.receiver.transport.ser.reset_input_buffer()
-        return self.receiver.transport.exec_command(cmd)
-
-    def check_power_state (self) -> MediaPlayerState:
-        power_state = self.receiver.transport.data.get(f"{self.zone}.Power")
-        if power_state == None:
-            try:
-                power_state = self.exec_command(f"{self.zone}.Power", "?")
-                #------------END-------------------
-            except CommandNotSupportedError:
-                self.power_state = None
-                _LOGGER.error("Error communicating with NAD Receiver (CommandNotSupportedError). Tried '%s'.power? received: '%s'", self.zone, power_state)
-                raise UpdateFailed("Error communicating with NAD Receiver (CommandNotSupportedError). Tried '%s'.power?", self.zone)
-            except IOError as ex:
-                self.power_state = None
-                _LOGGER.error("Error communicating with NAD Receiver (IOError). Tried '%s'.power?", self.zone)
-                raise UpdateFailed("Error communicating with NAD Receiver (IOError)", ex)
-
-        if power_state.lower() == "on":
-            return MediaPlayerState.ON
-        else:
-            return MediaPlayerState.OFF
 
     async def _async_update_data(self):
-        _LOGGER.info(" Async Update Data")
-        self.power_state = self.check_power_state()
-        return self.receiver.transport.data or {}
+        return self.receiver.data or {}
+
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up NAD Receiver from a config entry."""
@@ -306,55 +249,46 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await entity_registry.async_migrate_entries(hass, entry.entry_id, _async_migrate_entity_entry)
 
+    # _LOGGER.debug("NADReceiverCoordinator -boot- async_setup_entry - configEntry:%s", entry)
     try:
-        #------------START-----------------
-        # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
-        # Erstelle einen Coordinator pro Zone (mir langt Main und Zone2)
         coordinators = {
             "Main": NADReceiverCoordinator(hass, entry, zone="Main"),
             "Zone2": NADReceiverCoordinator(hass, entry, zone="Zone2"),
         }
-        #-------------END-----------------
-        
-        #------------START-----------------
-        # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
-        # Open the connection.
         if not await coordinators["Main"].connect():
             raise ConfigEntryNotReady(f"Unable to connect to NAD receiver Main")
         _LOGGER.info("NAD receiver Main is available")
-
         if not await coordinators["Zone2"].connect():
             raise ConfigEntryNotReady(f"Unable to connect to NAD receiver Zone2")
         _LOGGER.info("NAD receiver Zone2 is available")
-        #-------------END-----------------
 
     except serial.SerialException as ex:
         raise ConfigEntryNotReady(f"Unable to connect to NAD receiver") from ex
 
-    #------------START-----------------
-    # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
-    # Speichere alle Coordinators in runtime_data
-    entry.runtime_data = coordinators  # ✅ Nicht nur ein Coordinator, sondern ein Dict!
-    # ursprünglich: ein Coordinator:
-    #entry.runtime_data = receiver_coordinator
-    #-------------END-----------------
-    
+    entry.runtime_data = coordinators  
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # _LOGGER.debug("NADReceiverCoordinator -boot- after async_forward_entry_setups")
     
     # config_type = coordinators["Main"].config[CONF_TYPE]
     # Start the reader thread for this transport
     # We only need ONE Read-Loop. Choosing "Main" as the always present zone
     # Start the reader thread for this transport (if available)
     receiver = coordinators["Main"].receiver
-    if hasattr(receiver, 'transport') and hasattr(receiver.transport, 'start_reader'):
-        receiver.transport.start_reader()
+    # if hasattr(receiver, 'transport') and hasattr(receiver.transport, 'start_reader'):
+    #     receiver.transport.start_reader()
+    if hasattr(receiver, 'start_reader'):
+        receiver.start_reader()
 
     # provide an overview of the data collected so far in the status:
-    if _LOGGER.level == logging.DEBUG:
-        log_status_dict (receiver.transport.data, "NAD-Status")
+    # if _LOGGER.level == logging.DEBUG:
+    #     # log_status_dict (receiver.transport.data, "NAD-Status")
+    #     log_status_dict (receiver.data, "NAD-Status")
 
     entry.async_on_unload(entry.add_update_listener(update_listener))
 
+    # _LOGGER.debug("NADReceiverCoordinator -boot- async_setup_entry DONE - configEntry:%s", entry)
+    
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

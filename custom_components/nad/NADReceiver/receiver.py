@@ -7,43 +7,88 @@ nad_receiver library classes (NADReceiverSerial, NADReceiverTelnet, NADReceiverT
 import logging
 import serial
 
-from .transport import NADTransport, SerialPortTransport, TelnetTransport
+from .transport import NADTransport, SerialPortTransport, TelnetTransport, TCPTransport
 from .exceptions import CommandNotSupportedError
 from typing import Optional, Protocol, runtime_checkable 
 
 from homeassistant.exceptions import ConfigEntryNotReady
 
+from .. import const
 
 _LOGGER = logging.getLogger(__name__)
 
-class NADReceiver(Protocol):
-    """Interface für alle NAD-Receivert-Klassen."""
-    transport: NADTransport = None # type: ignore
-    def connect(self) -> None: ...
-    def close(self) -> None: ...
-    def main_model(self, operator: str) -> str: ...
-    def main_version(self, operator: str) -> str: ...
-    
-class NADReceiverSerial:
-    """RS-232 Receiver (Wrapper for SerialPortTransport)."""
-    
-    def __init__(self, serial_port: str, coordinator=None) -> None:
-        """Create RS232 connection.
-        """
-        self.transport: NADTransport = SerialPortTransport(serial_port, coordinator)
+class NADReceiver:
+    _instance = None
+    _initialized = False
+
+    def __new__(cls, *args, **kwargs):
+        """Insure to have a singleton"""
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self, connection_type, coordinator=None, port=None, host: str="", timeout: int=const.CONF_DEFAULT_TIMEOUT):
+        """Create a NADReceiver instance."""
+        if not self._initialized:
+            self.host: Optional[str] = host
+            self.timeout: Optional[int] = timeout
+            self.baudrate = 115200
+            self.connection_type = connection_type
+            match connection_type:
+                case const.CONF_TYPE_SERIAL:
+                    self.port = str(port)
+                    self.transport: NADTransport = SerialPortTransport(self, self.port)
+                case const.CONF_TYPE_TELNET:
+                    self.port = int(port)
+                    self.transport: NADTransport = TelnetTransport(self, host, self.port, timeout)
+                case const.CONF_TYPE_TCP:
+                    self.port = int(port)
+                    self.transport: NADTransport = TCPTransport(self, self.port, coordinator)
+            self.coordinators = {}
+            self.data = {}
+            self._initialized = True
+        # Immer Coordinator registrieren (auch bei wiederholten __init__-Aufrufen)
+        if coordinator:
+            self.coordinators[coordinator.zone] = coordinator
 
     def connect (self):
-        """        Connect to the reveiver
-        """
+        """ Connect to the reveiver """
         try:
             self.transport.open_connection()
         except serial.SerialException as ex:
             raise ConfigEntryNotReady(f"Unable to connect to NAD receiver") from ex
 
     def close (self):
-        """        Close the connection to the reveiver
-        """
+        """ Close the connection to the reveiver """
         self.transport.close_connection()
+
+    def write_command(self, cmd: str) -> None:
+        # _LOGGER.debug("%s@:%s writing: '%s'", self.connection_type, self, cmd)
+        self.transport.write_command(cmd)
+
+    def exec_command(self, cmd: str) -> str:
+        return self.transport.exec_command(cmd)
+
+    def start_reader(self) -> None:
+        self.transport.start_reader()
+
+    def update_status_data (self, line: str) -> None:
+        """Read the received Line and push it as key/value into data as status-update."""
+        if line: 
+            key = line.split("=", 1)[0]
+            val = line.split("=", 1)[1]   
+            self.data[key] = val
+
+            # detect te right coordinator
+            coordinator_name = line.split(".", 1)[0]  # z. B. "Main"
+            try: 
+                coordinator = self.coordinators[coordinator_name]
+            except:
+            # if not coordinator:
+                coordinator = self.coordinators["Main"]
+            if coordinator.initialized:
+                # No signals, if coordinator is not inititlaized and ready
+                coordinator.hass.add_job(coordinator.async_set_updated_data, self.data.copy())
 
     def main_model(self, operator: str) -> str:
         """        Get the receiver model 
@@ -66,46 +111,23 @@ class NADReceiverSerial:
         return response
 
 
-class NADReceiverTelnet:
-    """Telnet Receiver (Wrapper for TelnetTransportWrapper)."""
-    
-    def __init__(self, host: str, port: int = 23, timeout: int = 1, coordinator=None) -> None:
-        """        Create Telnet connection.
-        """
-        self.transport: NADTransport = TelnetTransport(host, port, timeout, coordinator)
+class NADReceiverSerial(NADReceiver):
+    """
+        RS-232 Receiver (Wrapper for SerialPortTransport).
+    """
+    def __init__(self, serial_port: int, coordinator=None) -> None:
+        """ Create RS232 connection. """
+        super().__init__(const.CONF_TYPE_SERIAL, coordinator, serial_port)
+        
 
-    def connect (self):
-        """        Connect to the reveiver        
-        """
-        try:
-            self.transport.open_connection()
-        except serial.SerialException as ex:
-            raise ConfigEntryNotReady(f"Unable to connect to NAD receiver") from ex
 
-    def close (self):
-        """        Close the connection to the reveiver        
-        """
-        self.transport.close_connection()
-
-    def main_model(self, operator: str) -> str:
-        """        Get the receiver model 
-        ONLY USED FOR -> validation in config_flow.
-        """
-        cmd = f"Main.Model{operator}"
-        response = self.transport.exec_command(cmd)
-        if not response:
-            raise CommandNotSupportedError()
-        return response
-
-    def main_version(self, operator: str) -> str:
-        """        Get the receiver FW-Version 
-        ONLY USED FOR -> validation in config_flow.
-        """
-        cmd = f"Main.Version{operator}"
-        response = self.transport.exec_command(cmd)
-        if not response:
-            raise CommandNotSupportedError()
-        return response
+class NADReceiverTelnet(NADReceiver):
+    """
+        Telnet Receiver (Wrapper for TelnetTransportWrapper).
+    """
+    def __init__(self, host: str, port: int = const.CONF_DEFAULT_PORT, timeout: int=const.CONF_DEFAULT_TIMEOUT, coordinator=None) -> None:
+        """ Create Telnet connection. """
+        super().__init__(const.CONF_TYPE_TELNET, coordinator, port, host, timeout)
 
 
 class NADReceiverTCP:

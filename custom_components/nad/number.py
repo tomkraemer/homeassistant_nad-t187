@@ -32,13 +32,7 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the NAD Receiver number."""
-    #------------START-----------------
-    # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
-    #   Alles, was über Volume, Mute und Inputs hinausgeht,
-    #   wird über den Controller der Zone "Main" abgehandelt
-    #coordinator: NADReceiverCoordinator = config_entry.runtime_data
     coordinator: NADReceiverCoordinator = config_entry.runtime_data["Main"]
-    #-------------END-----------------
 
     # Fetch initial data so we have data when entities subscribe
     await coordinator.async_config_entry_first_refresh()
@@ -458,8 +452,9 @@ class NADReceiverNumber(CoordinatorEntity, NumberEntity):
         return self.coordinator.last_update_success
 
     async def async_set_native_value(self, value: float) -> None:
-        _LOGGER.debug("async_set_native_value - on/off: %s - %s==%s?", self.coordinator.power_state, self._attr_native_value, value)
-        if self.coordinator.power_state == MediaPlayerState.ON:
+        # muss nicht On-sein available langt.
+        # _LOGGER.debug("async_set_native_value - available: %s - %s==%s?", self.coordinator.is_available(), self._attr_native_value, value)
+        if self.coordinator.is_available():
             if self._attr_native_value == value:
                 return
 

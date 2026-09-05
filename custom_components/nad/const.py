@@ -7,6 +7,8 @@ DOMAIN: Final = "nad"
 CONF_TYPE_SERIAL: Final = "RS232"
 CONF_TYPE_TELNET: Final = "Telnet"
 CONF_TYPE_TCP: Final = "TCP"
+CONF_DEFAULT_TIMEOUT = 1
+
 
 CONF_SERIAL_PORT: Final = "serial_port"     # for NADReceiver
 CONF_DEFAULT_PORT: Final = 23               # 53 klappt bei uns nicht
