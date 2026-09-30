@@ -12,6 +12,9 @@ from .exceptions import CommandNotSupportedError
 from typing import Optional, Protocol, runtime_checkable 
 
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.components.media_player import (
+    MediaPlayerState,
+)
 
 from .. import const
 
@@ -51,6 +54,14 @@ class NADReceiver:
         if coordinator:
             self.coordinators[coordinator.zone] = coordinator
 
+    @property
+    def available(self):
+        try:
+            res = self.transport.available
+        except:
+            res = False
+        return res
+
     def connect (self):
         """ Connect to the reveiver """
         try:
@@ -75,19 +86,32 @@ class NADReceiver:
     def update_status_data (self, line: str) -> None:
         """Read the received Line and push it as key/value into data as status-update."""
         if line: 
-            key = line.split("=", 1)[0]
-            val = line.split("=", 1)[1]   
+            key = line.split("=", 1)[0] # z.B. "Main.Power"
+            val = line.split("=", 1)[1] # z.B. "On"  
+            zone= key.split(".", 1)[0]  # z.B. "Main"
+            cmd = key.split(".", 1)[1]  # z.B. "Power"
+            match cmd.lower():
+                case "power":
+                    if val.lower() == "off":
+                        val = MediaPlayerState.OFF
+                    elif val.lower() == "on":
+                        val = MediaPlayerState.ON
+                case "volume":
+                    if val.lstrip("-").isnumeric():
+                        val = float(val)
+                    else: # Some receivers cannot report the volume, e.g. C 356BEE, instead they only support stepping the volume up or down
+                        val = None
             self.data[key] = val
 
             # detect te right coordinator
-            coordinator_name = line.split(".", 1)[0]  # z. B. "Main"
             try: 
-                coordinator = self.coordinators[coordinator_name]
+                coordinator = self.coordinators[zone]
             except:
-            # if not coordinator:
                 coordinator = self.coordinators["Main"]
+
             if coordinator.initialized:
                 # No signals, if coordinator is not inititlaized and ready
+                _LOGGER.debug("%s received: '%s.%s=%s'", self.connection_type, zone, cmd, val)
                 coordinator.hass.add_job(coordinator.async_set_updated_data, self.data.copy())
 
     def main_model(self, operator: str) -> str:

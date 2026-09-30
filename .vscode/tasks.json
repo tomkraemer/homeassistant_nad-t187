@@ -9,7 +9,8 @@
             "label": "NAD-Deploy",
             "type": "shell",
             // "command": "rsync -av --progress --exclude '.git*' --exclude '.vscode' \"${workspaceFolder}/\" \"/Volumes/config/custom_components/nad/\"",
-            "command": "rsync -av --inplace --progress --exclude='.git*' --exclude='.vscode' --exclude='.DS_Store' --exclude='._*' \"/Users/tom/Coding/Codeberg/homeassistant_nad-t187/custom_components/nad/\" \"/Volumes/config/custom_components/nad/\"",
+//            "command": "rsync -av --inplace --progress --exclude='.git*' --exclude='.vscode' --exclude='.DS_Store' --exclude='._*' \"/Users/tom/Coding/Codeberg/homeassistant_nad-t187/custom_components/nad/\" \"/Volumes/config/custom_components/nad/\"",
+            "command": "rsync -av --inplace --progress --exclude='.git*' --exclude='.vscode' --exclude='.DS_Store' --exclude='._*' \"/Users/tom/Coding/Codeberg/homeassistant_nad-t187/custom_components/nad/\" \"/Users/tom/Coding/Codeberg/domotesse/config/custom_components/nad/\"",
             "problemMatcher": [],
             "group": {
                 "kind": "build",

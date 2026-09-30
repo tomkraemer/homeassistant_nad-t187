@@ -33,6 +33,11 @@ class NADTransport():
         self._last_line = ""
         self.available = False
 
+    def open_connection(self) -> None:
+        """PROTOTYPE: to be implemented in derived class.
+        """
+        pass
+
     def close_connection(self) -> None:
         """
             close a typed connection.
@@ -49,7 +54,7 @@ class NADTransport():
             self.open_connection()
         if self.channel:
             try:
-                _LOGGER.debug("%s sending: '%s'", self.connection_type, cmd)
+                # _LOGGER.debug("%s sending: '%s'", self.connection_type, cmd)
                 self.channel.write(f"\n{cmd}\r".encode())
             except (EOFError, BrokenPipeError, ConnectionResetError):
                 self.close_connection()

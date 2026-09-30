@@ -286,7 +286,7 @@ class NADReceiverSelect(CoordinatorEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
-        if self.coordinator.is_available():
+        if self.coordinator.receiver.available:
             if self._attr_current_option == option:
                 return
 

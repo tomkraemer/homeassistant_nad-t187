@@ -31,6 +31,10 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import entity_registry
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+
+from homeassistant.components.frontend import add_extra_js_url
+from homeassistant.components.http import StaticPathConfig
+
 # from .NADReceiver import NADReceiver, NADReceiverSerial, NADReceiverTCP, NADReceiverTelnet
 from .NADReceiver import NADReceiver,  NADReceiverSerial, NADReceiverTCP, NADReceiverTelnet
 from .NADReceiver.exceptions import CommandNotSupportedError
@@ -80,24 +84,20 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
     """NAD Receiver Data Update Coordinator"""
 
     receiver: NADReceiver = None
-    should_poll = False
+    # should_poll = False
 
     unique_id = None
     model: str = None
     version: str = None
     device_info: DeviceInfo = None
-    # power_state = None
 
     _listener_commands = []
 
     def __init__(self, hass, entry: ConfigEntry, zone: str = "Main"):
-        # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
-        # Default-Zone eingeführt
+        """Initialize NAD Receiver Data Update Coordinator"""
         self.zone = zone
-        # self.data = {}
         self.initialized = False
         
-        """Initialize NAD Receiver Data Update Coordinator"""
         super().__init__(
             hass,
             _LOGGER,
@@ -105,6 +105,7 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
             name=__name__,
             # Polling interval. Will only be polled if there are subscribers.
             #update_interval=timedelta(seconds=25),
+            update_interval=None,
         )
 
         # _LOGGER.debug("INIT -boot- NADReceiverCoordinator - config_entry: %s", entry)
@@ -129,13 +130,30 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
             host = self.config[CONF_HOST]
             self.receiver = NADReceiverTCP(host, coordinator=self)
         
-
-    def is_available(self):
+    @property
+    def available(self) -> bool:
         try:
-            res = self.receiver.transport.available
+            res = self.receiver.available
         except:
-            res = false
+            res = False
         return res
+
+    @callback
+    def async_add_listener(self, update_callback: CALLBACK_TYPE, context: Any = None) -> Callable[[], None]:
+        remove_listener = super().async_add_listener(update_callback, context)
+        _LOGGER.debug("Adding listener for %s", context)
+        if context:
+            self.add_listener_command(context)
+        return remove_listener
+
+    def add_listener_command(self, command):
+        _LOGGER.debug("Adding command %s", command)
+        if command not in self._listener_commands:
+            self._listener_commands.append(command)
+
+    async def _async_update_data(self):
+        return self.receiver.data or {}
+
 
     async def connect(self) -> bool:
         if not self.model:
@@ -149,7 +167,6 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
             identifiers = {(DOMAIN, self.unique_id)}
             if self.config[CONF_TYPE] == CONF_TYPE_SERIAL:
                 identifiers.add((DOMAIN, self.config[CONF_SERIAL_PORT]))
-
             self.device_info = DeviceInfo(
                 identifiers=identifiers,
                 name=f"NAD {self.model}",
@@ -157,40 +174,16 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
                 manufacturer="NAD",
                 sw_version=self.version,
             )
-
             self.sources = self.get_sources()
-
             return True
-
 
     async def disconnect(self):
         pass
-
-
-    @callback
-    def async_add_listener(
-        self, update_callback: CALLBACK_TYPE, context: Any = None
-    ) -> Callable[[], None]:
-        remove_listener = super().async_add_listener(update_callback, context)
-
-        _LOGGER.debug("Adding listener for %s", context)
-        if context:
-            self.add_listener_command(context)
-
-        return remove_listener
-
-    def add_listener_command(self, command):
-        _LOGGER.debug("Adding command %s", command)
-        if command not in self._listener_commands:
-            self._listener_commands.append(command)
-            # initialize status with the current value
-            # self.exec_command(command, "?")
 
     def get_sources(self) -> {}:
         sources = {}
 
         for i in range(1, CONF_COUNT_OF_SOURCES+1):
-        #------------END-------------------
             try:
                 response = self.exec_command(f"Source{i}.Enabled", "?")
                 if response is not None and response.lower() == "yes":
@@ -223,10 +216,6 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
         return res
 
 
-    async def _async_update_data(self):
-        return self.receiver.data or {}
-
-
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up NAD Receiver from a config entry."""
@@ -248,8 +237,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return None
 
     await entity_registry.async_migrate_entries(hass, entry.entry_id, _async_migrate_entity_entry)
-
     # _LOGGER.debug("NADReceiverCoordinator -boot- async_setup_entry - configEntry:%s", entry)
+
     try:
         coordinators = {
             "Main": NADReceiverCoordinator(hass, entry, zone="Main"),
@@ -266,17 +255,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         raise ConfigEntryNotReady(f"Unable to connect to NAD receiver") from ex
 
     entry.runtime_data = coordinators  
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     # _LOGGER.debug("NADReceiverCoordinator -boot- after async_forward_entry_setups")
     
-    # config_type = coordinators["Main"].config[CONF_TYPE]
     # Start the reader thread for this transport
     # We only need ONE Read-Loop. Choosing "Main" as the always present zone
     # Start the reader thread for this transport (if available)
     receiver = coordinators["Main"].receiver
-    # if hasattr(receiver, 'transport') and hasattr(receiver.transport, 'start_reader'):
-    #     receiver.transport.start_reader()
     if hasattr(receiver, 'start_reader'):
         receiver.start_reader()
 
@@ -286,9 +272,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     #     log_status_dict (receiver.data, "NAD-Status")
 
     entry.async_on_unload(entry.add_update_listener(update_listener))
-
     # _LOGGER.debug("NADReceiverCoordinator -boot- async_setup_entry DONE - configEntry:%s", entry)
-    
+
+
+    await hass.http.async_register_static_paths([
+        StaticPathConfig(
+            f"/assets/{DOMAIN}",                                  # Die URL im Frontend
+            hass.config.path(f"custom_components/{DOMAIN}/www"),  # Der echte Pfad auf der Festplatte
+            False                                                 # cache_headers (wird als positionelles Argument übergeben)
+        )
+    ])
+
+    # add_extra_js_url(hass, f"/local/{DOMAIN}")
+
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

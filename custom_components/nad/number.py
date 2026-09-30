@@ -453,8 +453,8 @@ class NADReceiverNumber(CoordinatorEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         # muss nicht On-sein available langt.
-        # _LOGGER.debug("async_set_native_value - available: %s - %s==%s?", self.coordinator.is_available(), self._attr_native_value, value)
-        if self.coordinator.is_available():
+        # _LOGGER.debug("async_set_native_value - available: %s - %s==%s?", self.coordinator.receiver.available, self._attr_native_value, value)
+        if self.coordinator.receiver.available:
             if self._attr_native_value == value:
                 return
 
