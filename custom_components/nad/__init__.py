@@ -215,8 +215,12 @@ class NADReceiverCoordinator(DataUpdateCoordinator):
         # _LOGGER.debug("exec_command: '%s' -> '%s", cmd, res)
         return res
 
-
-
+#####################################################################################
+#   IMPLEMENTING THE BASIC HA-FUNCTIONS
+#   - async_setup_entry
+#   - async_unload_entry
+#   -update_listener
+#
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up NAD Receiver from a config entry."""
 
@@ -239,6 +243,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await entity_registry.async_migrate_entries(hass, entry.entry_id, _async_migrate_entity_entry)
     # _LOGGER.debug("NADReceiverCoordinator -boot- async_setup_entry - configEntry:%s", entry)
 
+    # Building the zones. F.t.t.b we introduce two zones (Main, Zone2) as fixed
     try:
         coordinators = {
             "Main": NADReceiverCoordinator(hass, entry, zone="Main"),
@@ -274,7 +279,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(entry.add_update_listener(update_listener))
     # _LOGGER.debug("NADReceiverCoordinator -boot- async_setup_entry DONE - configEntry:%s", entry)
 
-
+    # Um ein Status-Bild auf der Oberflche zu zeigen, müssen 
+    #  der Pfad zu den PNGs an einer zentrlen Stelle gemountet/bekanntgeben werden
     await hass.http.async_register_static_paths([
         StaticPathConfig(
             f"/assets/{DOMAIN}",                                  # Die URL im Frontend
@@ -282,9 +288,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             False                                                 # cache_headers (wird als positionelles Argument übergeben)
         )
     ])
-
     # add_extra_js_url(hass, f"/local/{DOMAIN}")
-
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

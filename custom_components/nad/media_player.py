@@ -140,6 +140,8 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
         self._attr_state = None
 
         if self.coordinator.receiver.available:
+            # Der Receiver hat den vollständigen Status des AVR immer parar.
+            # den nutzen wir:
             data =  self.coordinator.receiver.data
 
             self._attr_available        = True
@@ -162,6 +164,12 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
         #     #
         #     #     self.schedule_update_ha_state()
 
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        if not self._attr_available:
+            return self._attr_available
+        return self.coordinator.last_update_success
 
     def turn_off(self) -> None:
         """ Implementaion of MediaPlayerEntityFeature:
@@ -176,12 +184,12 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
     def volume_up(self) -> None:
         """ Implementaion of MediaPlayerEntityFeature:
             Volume up the media player."""
-        self.coordinator.write_command(self.zone + ".Volume", "+")
+        self.coordinator.write_command(self.zone + ".Volume", "+", None)
 
     def volume_down(self) -> None:
         """ Implementaion of MediaPlayerEntityFeature:
             Volume down the media player."""
-        self.coordinator.write_command(self.zone + ".Volume", "-")
+        self.coordinator.write_command(self.zone + ".Volume", "-", None)
 
     def set_volume_level(self, volume: float) -> None:
         """ Implementaion of MediaPlayerEntityFeature:
@@ -210,12 +218,8 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
 
     @property
     def media_image_url(self) -> str | None:
-        """Gibt dynamisch das Bild passend zur aktiven Quelle zurück."""
-
-        # WICHTIG: Füge einen Zeitstempel an (?v=12345678), 
-        # damit der Browser das Bild bei einem Quellenwechsel garantiert neu lädt!
-        timestamp = int(time.time())
-
+        """Gibt dynamisch das Bild passend zur aktiven Quelle zurück.
+        """
         source_name = self._attr_source.lower()
         source_name = source_name.replace(" ", "-")
         # path = f"./wwww/{source_name}.png"
@@ -240,20 +244,15 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
 
         # _LOGGER.debug("Source: %s FileName: %s Path: %s URL:%s", self._attr_source, source_name, path, url)
 
+        # WICHTIG: Füge einen Zeitstempel an (?v=12345678), 
+        # damit der Browser das Bild bei einem Quellenwechsel garantiert neu lädt!
+        timestamp = int(time.time())
         return f"{url}?v={timestamp}"
     
     @property
     def source_list(self):
         """List of available input sources."""
         return list(self._reverse_mapping)
-
-    @property
-    def available(self) -> bool:
-        """Return if entity is available."""
-        if not self._attr_available:
-            return self._attr_available
-
-        return self.coordinator.last_update_success
 
     def calc_volume(self, decibel):
         """Calculate the volume given the decibel.
@@ -271,7 +270,10 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
             abs(self._min_volume - self._max_volume) * volume
         )
 
-
+#####################################################################################
+#   IMPLEMENTING TWO MEDIA PLAYER. ONE FOR EACH ZONE
+#   - Main
+#   - Zone 2
 class NADMain(NAD):
     """Representation of a NAD Receiver - Main."""
 
@@ -307,7 +309,6 @@ class NADMain(NAD):
 
         self._add_listener_for_media_player(coordinator, "ListeningMode")
 
-
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
@@ -319,7 +320,6 @@ class NADMain(NAD):
             self._attr_sound_mode = listeningMode
             
         self.schedule_update_ha_state()
-
 
     def select_sound_mode(self, sound_mode: str) -> None:
         """Select sound mode.   - Implementaion of MediaPlayerEntityFeature """

@@ -62,6 +62,23 @@ class NADReceiver:
             res = False
         return res
 
+    #####################################################################################
+    # TRANSPORT MAPPING AND USING
+    #
+    #   CONNECTION HANDLING
+    #   - Connect       
+    #   - Close
+    #
+    #   BASIC COMMUNICATION
+    #   - Write
+    #   - Exec
+    #
+    #   READER LOOP
+    #   - Start
+    #
+    #   RESPOSE HANDLING
+    #   - Update Status
+    #
     def connect (self):
         """ Connect to the reveiver """
         try:
@@ -101,6 +118,8 @@ class NADReceiver:
                         val = float(val)
                     else: # Some receivers cannot report the volume, e.g. C 356BEE, instead they only support stepping the volume up or down
                         val = None
+
+            # Status update: New Value for Key
             self.data[key] = val
 
             # detect te right coordinator
@@ -112,8 +131,13 @@ class NADReceiver:
             if coordinator.initialized:
                 # No signals, if coordinator is not inititlaized and ready
                 _LOGGER.debug("%s received: '%s.%s=%s'", self.connection_type, zone, cmd, val)
+
+                # signalling the right hass-cordinator about the status change 
                 coordinator.hass.add_job(coordinator.async_set_updated_data, self.data.copy())
 
+    #####################################################################################
+    # CONFIG FLOW FUNCTIONS
+    #
     def main_model(self, operator: str) -> str:
         """        Get the receiver model 
         ONLY USED FOR -> validation in config_flow.

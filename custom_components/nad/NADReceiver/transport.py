@@ -10,14 +10,10 @@ from datetime import datetime
 from typing import Optional, Protocol, runtime_checkable 
 import logging
 import time
-
-_LOGGER = logging.getLogger(__name__)
-
 from .. import const
-
-
 from typing import Protocol
 
+_LOGGER = logging.getLogger(__name__)
 
 class NADTransport():
     """Basis-Klasse für alle NAD-Transport-Klassen."""
@@ -33,6 +29,22 @@ class NADTransport():
         self._last_line = ""
         self.available = False
 
+    ####################################################################################
+    # Die Kombination aus _reader_loop und _read_reponse ist Herz der Verbindung zum AVR.
+    #   Es wird kontinierlich am Socket gelauscht. 
+    #       Wird in _readResponse ein EndeToken "\n" im Stream gefunden,
+    #       wird der gesammlete String decoded, danach 
+    #       wird das Lesen zunächst unterbochen, indem 
+    #       der String an _reader_loop zurückgegeben wird 
+    #   _readser_loop gibt das Lesergebnis an den angemeldeten Receiver, 
+    #       damit dieser aus dem String ein Update seines Status vornimmt.
+    #   danach wird weiter gelauscht
+    
+
+    #############################################################################
+    # CONNECTION HANDLING
+    #       - Open
+    #       - Close
     def open_connection(self) -> None:
         """PROTOTYPE: to be implemented in derived class.
         """
@@ -46,6 +58,11 @@ class NADTransport():
             self.channel.close()
             self.channel = None
 
+    #############################################################################
+    # BASIC COMMUNICATION
+    #       - Write
+    #       - Read
+    #       - Exec
     def write_command(self, cmd: str) -> None:
         """
             Write a command to the telnet connection.
@@ -59,67 +76,10 @@ class NADTransport():
             except (EOFError, BrokenPipeError, ConnectionResetError):
                 self.close_connection()
 
-    def exec_command(self, cmd: str) -> str:
-        """
-            Write command, read respone and return its result.
-        """
-        self.write_command(cmd)
-        line = self._read_response()
-        if line:
-            self.receiver.update_status_data(line)
-            # _LOGGER.debug("Line received @ %s: %s", self.connection_type, line)
-            return line.split("=", 1)[1]
-        else:
-            return ''
-        
-
-    def start_reader(self) -> None:
-        """Start background reader thread."""
-        if self._reader_thread is not None and self._reader_thread.is_alive():
-            return
-        
-        self._stop_reading = False
-        self._reader_thread = threading.Thread(
-            target=self._reader_loop,
-            daemon=True
-        )
-        self._reader_thread.start()
-        # _LOGGER.debug("Started %s reader thread", self.connection_type)
-
-    def stop_reader(self) -> None:
-        """
-            Stop background reader thread.
-        """
-        self._stop_reading = True
-        if self._reader_thread and self._reader_thread.is_alive():
-            self._reader_thread.join(timeout=0.5)
-        self._reader_thread = None
-        _LOGGER.info("Stopped %s reader thread", self.connection_type)
-
-    def _pre_read(self) -> bool:
-        # On initial connection
-        # some firmwares sends nothing
-        # some firmwares sends e.g. b'\rMain.Model=T787\r\n'
-        # some firmwares sends multiple lines (BlueOS settings dump ?)
-        #    including blank lines between data lines
-        # At least clear the row "\rMain.Model=T787\r\n"
-        try:
-            self.channel.read_until("\n".encode())
-            # Could raise eg. EOFError, UnicodeError
-        except EOFError as cc:
-            # Connection closed, no recovery
-            _LOGGER.info("Connection closed: %s", cc)
-            self.close_connection()
-            return False
-        except UnicodeError as ue:
-            # Some unicode error, but connection is open
-            _LOGGER.info("Unicode error: %s", ue)
-            return True
-
-        return True
-
     def _read_response(self) -> str:
-        """Read a single response from the telnet connection."""
+        """
+            Read a single response from the telnet connection.
+        """
         if not self.channel:
             self.open_connection()
         if not self.channel:
@@ -142,8 +102,56 @@ class NADTransport():
         except UnicodeError:
             return ""
 
+    def exec_command(self, cmd: str) -> str:
+        """
+            Write a command to the telnet connection.
+            Read the respone following this format
+                <command> = <result>
+            return its result only
+        """
+        self.write_command(cmd)
+        line = self._read_response()
+        if line:
+            self.receiver.update_status_data(line)
+            # _LOGGER.debug("Line received @ %s: %s", self.connection_type, line)
+            return line.split("=", 1)[1]
+        else:
+            return ''
+        
+    #############################################################################
+    # READER LOOP
+    #       - Start
+    #       - Stop
+    #       - Loop
+    def start_reader(self) -> None:
+        """
+            Start background reader thread.
+        """
+        if self._reader_thread is not None and self._reader_thread.is_alive():
+            return
+        
+        self._stop_reading = False
+        self._reader_thread = threading.Thread(
+            target=self._reader_loop,
+            daemon=True
+        )
+        self._reader_thread.start()
+        # _LOGGER.debug("Started %s reader thread", self.connection_type)
+
+    def stop_reader(self) -> None:
+        """
+            Stop background reader thread.
+        """
+        self._stop_reading = True
+        if self._reader_thread and self._reader_thread.is_alive():
+            self._reader_thread.join(timeout=0.5)
+        self._reader_thread = None
+        _LOGGER.info("Stopped %s reader thread", self.connection_type)
+
     def _reader_loop(self) -> None:
-        """Continuous reader loop."""
+        """
+            Continuous reader loop.
+        """
         # _LOGGER.debug("Telnet reader loop started ")
         while not self._stop_reading:
             try:
@@ -196,6 +204,27 @@ class TelnetTransport(NADTransport):
         self.host = host
         self.port = port
         self.connection_type= const.CONF_TYPE_TELNET
+
+    def _pre_read(self) -> bool:
+        # On initial connection
+        # some firmwares sends nothing
+        # some firmwares sends e.g. b'\rMain.Model=T787\r\n'
+        # some firmwares sends multiple lines (BlueOS settings dump ?)
+        #    including blank lines between data lines
+        # At least clear the row "\rMain.Model=T787\r\n"
+        try:
+            self.channel.read_until("\n".encode())
+            # Could raise eg. EOFError, UnicodeError
+        except EOFError as cc:
+            # Connection closed, no recovery
+            _LOGGER.info("Connection closed: %s", cc)
+            self.close_connection()
+            return False
+        except UnicodeError as ue:
+            # Some unicode error, but connection is open
+            _LOGGER.info("Unicode error: %s", ue)
+            return True
+        return True
 
     def open_connection(self) -> None:
         if self.channel:
