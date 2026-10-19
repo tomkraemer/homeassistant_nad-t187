@@ -9,5 +9,5 @@
   "issue_tracker": "https://codeberg.org/tomkraemer/homeassistant_nad-t187/issues",
   "loggers": ["nad_receiver"],
   "requirements": [],
-  "version": "1.0.2-b"
+  "version": "1.0.2"
 }
