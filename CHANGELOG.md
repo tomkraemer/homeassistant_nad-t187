@@ -2,6 +2,19 @@
 # Alle Major-Changes ...
 ... beginnend mit der Code-Übernahme von 
 
+## Version v1.0.2 - [Dev: 19.10.26]
+### 1. Vollständiger Umbau - eigene Anbindung zum NAD 
+Einführung eines eigenen Communication-Layers zwiwchen Integration und AVR
+Ein Listener triggert jetzt bei hereinkommenden Daten - und nur dann! Kein Polling mehr
+Es gibt eine NAD-Receiver Entität als Abbild des Receivers auf HA-Seite. Das Comm-Layer ist Teil dieser Entität
+Mediaplayer und Coordinator lesen desn Satsu aus der  NAD-Receiver Entität
+| Datei | Änderung | Grund |
+| --- | --- | --- |
+| alle | Umbau | vollständige Überarbeitung |
+
+
+
+
 ## Version v1.0.0 - [Dev: 18.08.26 / Dok: 20.08.26]
 ### 1. Umstellung auf zwei Controller, je einer pro Zone.
 Bisher gab es genau einen Controller für diese NAD-Entity. Damit waren aber die beiden für mich nötigen Zonen *Main* und *Zone2* nicht sauber abgebildet. Ein Setzten der `zone`-Eigenschaft innerhalb der Media-Player-Instanzen führte zu gegenseitigem Überschreiben, da ein gemeinsamer Controller geteilt wurde. Damit gab es zwar in gewisser weise schon irgenwie zwei Mediaplayer, andererseits aber doch nur einen, da beide sich einen Controller teilten, der Status-Updates etc. für beide ohne weitere Differenzierung durchführte.
