@@ -1,4 +1,4 @@
-"""Support for interfacing with NAD receivers through RS-232."""
+"""Media Player NAD receivers (Two zones pre-implemented)"""
 
 import logging
 import os

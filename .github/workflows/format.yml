@@ -1,0 +1,23 @@
+name: Format Check
+
+on: [push, pull_request]
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install formatting tools
+        run: pip install isort[colors] black
+
+      - name: Check isort
+        run: isort --settings-path .isort.cfg --check-only custom_components/nad_avr/
+
+      - name: Check black
+        run: black --config pyproject.toml --check custom_components/nad_avr/

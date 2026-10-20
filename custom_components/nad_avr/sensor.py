@@ -1,3 +1,5 @@
+"""Part of the  NAD Receiver component."""
+
 import logging
 
 from homeassistant.components.media_player.const import MediaPlayerState
