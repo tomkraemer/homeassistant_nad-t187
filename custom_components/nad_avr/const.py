@@ -9,9 +9,8 @@ CONF_TYPE_TELNET: Final = "Telnet"
 CONF_TYPE_TCP: Final = "TCP"
 CONF_DEFAULT_TIMEOUT = 1
 
-
 CONF_SERIAL_PORT: Final = "serial_port"  # for NADReceiver
-CONF_DEFAULT_PORT: Final = 23  # 53 klappt bei uns nicht
+CONF_DEFAULT_PORT: Final = 23  # 53 does not work for us
 
 CONF_MIN_VOLUME: Final = "min_volume"
 CONF_MAX_VOLUME: Final = "max_volume"
