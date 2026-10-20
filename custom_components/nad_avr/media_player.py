@@ -6,23 +6,29 @@ import time
 
 import requests
 from aiodiscover.discovery import _LOGGER
-from homeassistant.components.media_player import (MediaPlayerDeviceClass,
-                                                   MediaPlayerEntity,
-                                                   MediaPlayerEntityFeature,
-                                                   MediaPlayerState)
+from homeassistant.components.media_player import (
+    MediaPlayerDeviceClass,
+    MediaPlayerEntity,
+    MediaPlayerEntityFeature,
+    MediaPlayerState,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_TYPE
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.entity_platform import \
-    AddConfigEntryEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import NADReceiverCoordinator, log_status_dict
-from .const import (CONF_DEFAULT_MAX_VOLUME, CONF_DEFAULT_MIN_VOLUME,
-                    CONF_DEFAULT_VOLUME_STEP, CONF_MAX_VOLUME, CONF_MIN_VOLUME,
-                    DOMAIN)
+from .const import (
+    CONF_DEFAULT_MAX_VOLUME,
+    CONF_DEFAULT_MIN_VOLUME,
+    CONF_DEFAULT_VOLUME_STEP,
+    CONF_MAX_VOLUME,
+    CONF_MIN_VOLUME,
+    DOMAIN,
+)
 from .NADReceiver import NADReceiverSerial, NADReceiverTCP, NADReceiverTelnet
 
 _LOGGER = logging.getLogger(__name__)

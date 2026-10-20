@@ -13,8 +13,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 
 from .. import const
 from .exceptions import CommandNotSupportedError
-from .transport import (NADTransport, SerialPortTransport, TCPTransport,
-                        TelnetTransport)
+from .transport import NADTransport, SerialPortTransport, TCPTransport, TelnetTransport
 
 _LOGGER = logging.getLogger(__name__)
 

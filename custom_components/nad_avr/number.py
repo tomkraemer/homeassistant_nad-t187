@@ -1,16 +1,23 @@
 import logging
 
 from homeassistant.components.media_player.const import MediaPlayerState
-from homeassistant.components.number import (NumberDeviceClass, NumberEntity,
-                                             NumberEntityDescription,
-                                             NumberMode)
+from homeassistant.components.number import (
+    NumberDeviceClass,
+    NumberEntity,
+    NumberEntityDescription,
+    NumberMode,
+)
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (PERCENTAGE, UnitOfFrequency, UnitOfLength,
-                                 UnitOfSoundPressure, UnitOfTime)
+from homeassistant.const import (
+    PERCENTAGE,
+    UnitOfFrequency,
+    UnitOfLength,
+    UnitOfSoundPressure,
+    UnitOfTime,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import EntityCategory
-from homeassistant.helpers.entity_platform import \
-    AddConfigEntryEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import NADReceiverCoordinator

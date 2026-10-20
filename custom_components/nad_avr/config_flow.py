@@ -9,25 +9,42 @@ import serial
 import serial.tools.list_ports
 import voluptuous as vol
 from aiodiscover.discovery import _LOGGER
-from homeassistant.config_entries import (ConfigEntry, ConfigFlow,
-                                          ConfigFlowResult, OptionsFlow)
-from homeassistant.const import (CONF_HOST, CONF_PORT, CONF_TYPE,
-                                 UnitOfSoundPressure)
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
+from homeassistant.const import CONF_HOST, CONF_PORT, CONF_TYPE, UnitOfSoundPressure
 from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.selector import (NumberSelector,
-                                            NumberSelectorConfig,
-                                            NumberSelectorMode,
-                                            SelectOptionDict, SelectSelector,
-                                            SelectSelectorConfig,
-                                            SelectSelectorMode, TextSelector)
+from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
+    SelectOptionDict,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+    TextSelector,
+)
 
 from . import CommandNotSupportedError, NADReceiverCoordinator
-from .const import (CONF_DEFAULT_MAX_VOLUME, CONF_DEFAULT_MIN_VOLUME,
-                    CONF_DEFAULT_PORT, CONF_DEFAULT_VOLUME_STEP,
-                    CONF_MAX_VOLUME, CONF_MIN_VOLUME, CONF_SERIAL_PORT,
-                    CONF_SOURCE_DICT, CONF_TYPE_SERIAL, CONF_TYPE_TCP,
-                    CONF_TYPE_TELNET, CONF_VOLUME_STEP, DOMAIN)
+from .const import (
+    CONF_DEFAULT_MAX_VOLUME,
+    CONF_DEFAULT_MIN_VOLUME,
+    CONF_DEFAULT_PORT,
+    CONF_DEFAULT_VOLUME_STEP,
+    CONF_MAX_VOLUME,
+    CONF_MIN_VOLUME,
+    CONF_SERIAL_PORT,
+    CONF_SOURCE_DICT,
+    CONF_TYPE_SERIAL,
+    CONF_TYPE_TCP,
+    CONF_TYPE_TELNET,
+    CONF_VOLUME_STEP,
+    DOMAIN,
+)
 from .NADReceiver import NADReceiverSerial, NADReceiverTCP, NADReceiverTelnet
 
 _LOGGER = logging.getLogger(__name__)

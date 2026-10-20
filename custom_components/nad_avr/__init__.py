@@ -2,6 +2,7 @@
 
 import logging
 import threading
+
 # ------------START-----------------
 # [v1.0.2][FIX: Response-Queue mit Timestamps]
 # datetime Import für Timestamp-Verwaltung in der Queue
@@ -20,21 +21,36 @@ from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.components.media_player.const import MediaPlayerState
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (CONF_DEVICE_ID, CONF_HOST, CONF_NAME,
-                                 CONF_PORT, CONF_TYPE, Platform)
-from homeassistant.core import (CALLBACK_TYPE, HomeAssistant, ServiceCall,
-                                callback)
+from homeassistant.const import (
+    CONF_DEVICE_ID,
+    CONF_HOST,
+    CONF_NAME,
+    CONF_PORT,
+    CONF_TYPE,
+    Platform,
+)
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import entity_registry
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.update_coordinator import (DataUpdateCoordinator,
-                                                      UpdateFailed)
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import (CONF_COUNT_OF_SOURCES, CONF_SERIAL_PORT, CONF_TYPE_SERIAL,
-                    CONF_TYPE_TCP, CONF_TYPE_TELNET, DOMAIN)
+from .const import (
+    CONF_COUNT_OF_SOURCES,
+    CONF_SERIAL_PORT,
+    CONF_TYPE_SERIAL,
+    CONF_TYPE_TCP,
+    CONF_TYPE_TELNET,
+    DOMAIN,
+)
+
 # from .NADReceiver import NADReceiver, NADReceiverSerial, NADReceiverTCP, NADReceiverTelnet
-from .NADReceiver import (NADReceiver, NADReceiverSerial, NADReceiverTCP,
-                          NADReceiverTelnet)
+from .NADReceiver import (
+    NADReceiver,
+    NADReceiverSerial,
+    NADReceiverTCP,
+    NADReceiverTelnet,
+)
 from .NADReceiver.exceptions import CommandNotSupportedError
 
 _LOGGER = logging.getLogger(__name__)
