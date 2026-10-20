@@ -1,6 +1,6 @@
 {
-  "domain": "nad",
-  "name": "NAD",
+  "domain": "nad_t187",
+  "name": "NAD T187",
   "codeowners": ["@tomkraemer"],
   "config_flow": true,
   "documentation": "https://codeberg.org/tomkraemer/homeassistant_nad-t187",
@@ -9,5 +9,6 @@
   "issue_tracker": "https://codeberg.org/tomkraemer/homeassistant_nad-t187/issues",
   "loggers": ["nad_receiver"],
   "requirements": [],
+  "dependencies": ["http"],
   "version": "1.0.2"
 }

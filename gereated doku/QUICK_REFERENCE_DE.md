@@ -18,7 +18,7 @@
 ### Manuell
 ```bash
 # Kopieren Sie das Verzeichnis
-cp -r /pfad/zur/integration/custom_components/nad \
+cp -r /pfad/zur/integration/custom_components/nad_t187 \
    /config/custom_components/
 
 # Home Assistant neu starten

@@ -29,8 +29,8 @@ Alle Antworten werden empfangen, aber alle nicht zur Anfrage gehörenden werden 
 
 ### 4. Deploy Task in `VS-Code`
 überträt vioa `<CTRL><SHIFT><B>` Files 
-- von `/Users/tom/Coding/Codeberg/homeassistant_nad-t187/custom_components/nad/` 
-- nach `/Volumes/config/custom_components/nad/`  *[smb-Mount -> Finder `<CTRL><K>`)]*
+- von `/Users/tom/Coding/Codeberg/homeassistant_nad-t187/custom_components/nad_t187/` 
+- nach `/Volumes/config/custom_components/nad_t187/`  *[smb-Mount -> Finder `<CTRL><K>`)]*
 <br><br><br><br>
 ------------------------------
 <br><br>

@@ -11,7 +11,7 @@ Dies ist eine **Home Assistant Integration für NAD Receiver**, die es ermöglic
 ### Hauptkomponenten
 
 ```
-custom_components/nad/
+custom_components/nad_t187/
 ├── __init__.py          # Hauptintegrations-Setup und Coordinator
 ├── const.py             # Konstanten und Konfiguration
 ├── config_flow.py       # Konfigurations-Assistent (UI)
@@ -49,7 +49,7 @@ Die Integration benötigt die externe Python-Bibliothek **`nad_receiver`** (Vers
 
 ### Option 2: Manuell
 
-1. Kopieren Sie das Verzeichnis `custom_components/nad` aus diesem Repository
+1. Kopieren Sie das Verzeichnis `custom_components/nad_t187` aus diesem Repository
 2. Fügen Sie es in Ihr Home Assistant Verzeichnis unter `config/custom_components/` ein
 3. Starten Sie Home Assistant neu
 
@@ -651,7 +651,7 @@ Die Integration sollte mit den meisten **NAD-Receivern** funktionieren, die das 
 ### Manuell
 
 1. Laden Sie die neueste Version herunter
-2. Ersetzen Sie das `custom_components/nad` Verzeichnis
+2. Ersetzen Sie das `custom_components/nad_t187` Verzeichnis
 3. Starten Sie Home Assistant neu
 
 ---
@@ -662,7 +662,7 @@ Die Integration sollte mit den meisten **NAD-Receivern** funktionieren, die das 
 
 Die Integration unterstützt Übersetzungen. Um eine neue Sprache hinzuzufügen:
 
-1. Erstellen Sie eine Datei `strings.json` im Verzeichnis `custom_components/nad/translations/<sprache>`
+1. Erstellen Sie eine Datei `strings.json` im Verzeichnis `custom_components/nad_t187/translations/<sprache>`
 2. Übersetzen Sie alle Strings aus der englischen `strings.json`
 3. Erstellen Sie einen Pull Request
 

@@ -2,7 +2,7 @@
 
 from typing import Final
 
-DOMAIN: Final = "nad"
+DOMAIN: Final = "nad_t187"
 
 CONF_TYPE_SERIAL: Final = "RS232"
 CONF_TYPE_TELNET: Final = "Telnet"
