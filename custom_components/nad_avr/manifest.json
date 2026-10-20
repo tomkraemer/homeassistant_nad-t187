@@ -1,6 +1,6 @@
 {
-  "domain": "nad_t187",
-  "name": "NAD T187",
+  "domain": "nad_avr",
+  "name": "NAD AVR",
   "codeowners": ["@tomkraemer"],
   "config_flow": true,
   "documentation": "https://codeberg.org/tomkraemer/homeassistant_nad-t187",

@@ -8,9 +8,9 @@
             // [optional?] --delete     sorgt dafür, dass auf dem Raspi Dateien gelöscht werden, die Sie lokal auf dem Mac gelöscht haben
             "label": "NAD-Deploy",
             "type": "shell",
-            // "command": "rsync -av --progress --exclude '.git*' --exclude '.vscode' \"${workspaceFolder}/\" \"/Volumes/config/custom_components/nad_t187/\"",
-//            "command": "rsync -av --inplace --progress --exclude='.git*' --exclude='.vscode' --exclude='.DS_Store' --exclude='._*' \"/Users/tom/Coding/Codeberg/homeassistant_nad-t187/custom_components/nad_t187/\" \"/Volumes/config/custom_components/nad_t187/\"",
-            "command": "rsync -av --inplace --progress --exclude='.git*' --exclude='.vscode' --exclude='.DS_Store' --exclude='._*' \"/Users/tom/Coding/Codeberg/homeassistant_nad-t187/custom_components/nad_t187/\" \"/Users/tom/Coding/Codeberg/domotesse/config/custom_components/nad_t187/\"",
+            // "command": "rsync -av --progress --exclude '.git*' --exclude '.vscode' \"${workspaceFolder}/\" \"/Volumes/config/custom_components/nad_avr/\"",
+//            "command": "rsync -av --inplace --progress --exclude='.git*' --exclude='.vscode' --exclude='.DS_Store' --exclude='._*' \"/Users/tom/Coding/Codeberg/homeassistant_nad-t187/custom_components/nad_avr/\" \"/Volumes/config/custom_components/nad_avr/\"",
+            "command": "rsync -av --inplace --progress --exclude='.git*' --exclude='.vscode' --exclude='.DS_Store' --exclude='._*' \"/Users/tom/Coding/Codeberg/homeassistant_nad-t187/custom_components/nad_avr/\" \"/Users/tom/Coding/Codeberg/domotesse/config/custom_components/nad_avr/\"",
             "problemMatcher": [],
             "group": {
                 "kind": "build",

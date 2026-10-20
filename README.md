@@ -58,7 +58,7 @@ Or follow these instructions:
 
 ### Manually
 
-- Copy the `custom_components/nad_t187` directory of this repository into the
+- Copy the `custom_components/nad_avr` directory of this repository into the
 `config/custom_components/` directory of your Home Assistant installation
 - Restart Home Assistant
 
@@ -80,7 +80,7 @@ You can contribute to this integration, or show your appreciation, in the follow
 ### Contribute your language
 
 If you would like to use this Home Assistant integration in your own language you can provide a
-translation file as found in the `custom_components/nad_t187/translations` directory. Create a pull
+translation file as found in the `custom_components/nad_avr/translations` directory. Create a pull
 request (preferred) or issue with the file attached.
 
 More on translating custom integrations can be found

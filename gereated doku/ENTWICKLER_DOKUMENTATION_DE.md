@@ -17,7 +17,7 @@ Diese Dokumentation richtet sich an **Entwickler**, die die NAD Receiver Integra
                               │
                               ▼
 ┌─────────────────────────────────────────────────────--────┐
-│                 custom_components/nad_t187/                    │
+│                 custom_components/nad_avr/                    │
 │  ┌────────-──────┐  ┌──────────-────┐  ┌────────────────┐ │
 │  │  __init__.py  │  │  const.py     │  │ manifest.json  │ │
 │  └─────────-─────┘  └─────────-─────┘  └────────────────┘ │
