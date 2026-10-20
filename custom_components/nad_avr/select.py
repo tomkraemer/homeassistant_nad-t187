@@ -1,11 +1,13 @@
 import logging
 
 from homeassistant.components.media_player.const import MediaPlayerState
-from homeassistant.components.select import SelectEntity, SelectEntityDescription
+from homeassistant.components.select import (SelectEntity,
+                                             SelectEntityDescription)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import EntityCategory
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.entity_platform import \
+    AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import NADReceiverCoordinator
@@ -20,13 +22,13 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the NAD Receiver select."""
-    #------------START-----------------
+    # ------------START-----------------
     # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
     #   Alles, was über Volume, Mute und Inputs hinausgeht,
     #   wird über den Controller der Zone "Main" abgehandelt
-    #coordinator: NADReceiverCoordinator = config_entry.runtime_data
+    # coordinator: NADReceiverCoordinator = config_entry.runtime_data
     coordinator: NADReceiverCoordinator = config_entry.runtime_data["Main"]
-    #-------------END-----------------
+    # -------------END-----------------
 
     # Fetch initial data so we have data when entities subscribe
     await coordinator.async_config_entry_first_refresh()
@@ -77,10 +79,10 @@ async def async_setup_entry(
             key="Main.ListeningMode.DolbyDigital",
             name="Dolby Digital Listening Mode",
             options=[
-                "None", 
-                "PLIIMovie", 
-                "PLIIMusic", 
-                "SurroundEX", 
+                "None",
+                "PLIIMovie",
+                "PLIIMusic",
+                "SurroundEX",
                 "StereoDownmix",
             ],
             entity_category=EntityCategory.CONFIG,
@@ -90,9 +92,9 @@ async def async_setup_entry(
             key="Main.ListeningMode.DolbyDigital2ch",
             name="Dolby Digital 2 channel Listening Mode",
             options=[
-                "None", 
-                "ProLogic", 
-                "PLIIMovie", 
+                "None",
+                "ProLogic",
+                "PLIIMovie",
                 "PLIIMusic",
             ],
             entity_category=EntityCategory.CONFIG,
@@ -102,8 +104,8 @@ async def async_setup_entry(
             key="Main.ListeningMode.DTS",
             name="DTS Listening Mode",
             options=[
-                "None", 
-                "NEO6Music", 
+                "None",
+                "NEO6Music",
                 "StereoDownmix",
             ],
             entity_category=EntityCategory.CONFIG,
@@ -226,9 +228,9 @@ async def async_setup_entry(
 
     for entity_description in entity_descriptions:
         if coordinator.supports_command(entity_description.key):
-            #-----------------------------
+            # -----------------------------
             # Nutze passenden Coordinator (Main sollte i.d.R passen)
-            #-----------------------------
+            # -----------------------------
             # entities.append(NADReceiverSelect(coordinators["Main"], entity_description))
             entities.append(NADReceiverSelect(coordinator, entity_description))
 

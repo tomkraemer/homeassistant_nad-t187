@@ -1,23 +1,16 @@
 import logging
 
 from homeassistant.components.media_player.const import MediaPlayerState
-from homeassistant.components.number import (
-    NumberDeviceClass,
-    NumberEntity,
-    NumberEntityDescription,
-    NumberMode,
-)
+from homeassistant.components.number import (NumberDeviceClass, NumberEntity,
+                                             NumberEntityDescription,
+                                             NumberMode)
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    PERCENTAGE,
-    UnitOfFrequency,
-    UnitOfLength,
-    UnitOfSoundPressure,
-    UnitOfTime,
-)
+from homeassistant.const import (PERCENTAGE, UnitOfFrequency, UnitOfLength,
+                                 UnitOfSoundPressure, UnitOfTime)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import EntityCategory
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.entity_platform import \
+    AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import NADReceiverCoordinator
@@ -337,7 +330,7 @@ async def async_setup_entry(
         NumberEntityDescription(
             key="Main.Trim.Center",
             name="Trim Level Center",
-            native_unit_of_measurement=UnitOfSoundPressure.DECIBEL,            
+            native_unit_of_measurement=UnitOfSoundPressure.DECIBEL,
             native_min_value=-6,
             native_max_value=6,
         ),
@@ -394,9 +387,9 @@ async def async_setup_entry(
 
     for entity_description in entity_descriptions:
         if coordinator.supports_command(entity_description.key):
-            #-----------------------------
+            # -----------------------------
             # Nutze passenden Coordinator (Main sollte i.d.R passen)
-            #-----------------------------
+            # -----------------------------
             # entities.append(NADReceiverSelect(coordinators["Main"], entity_description))
             entities.append(NADReceiverNumber(coordinator, entity_description))
 
@@ -461,4 +454,6 @@ class NADReceiverNumber(CoordinatorEntity, NumberEntity):
             if self.step < 1:
                 self.coordinator.write_command(self.entity_description.key, "=", value)
             else:
-                self.coordinator.write_command(self.entity_description.key, "=", int(value))
+                self.coordinator.write_command(
+                    self.entity_description.key, "=", int(value)
+                )

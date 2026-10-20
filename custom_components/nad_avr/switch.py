@@ -1,15 +1,13 @@
 import logging
 
 from homeassistant.components.media_player.const import MediaPlayerState
-from homeassistant.components.switch import (
-    SwitchDeviceClass,
-    SwitchEntity,
-    SwitchEntityDescription,
-)
+from homeassistant.components.switch import (SwitchDeviceClass, SwitchEntity,
+                                             SwitchEntityDescription)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import EntityCategory
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.entity_platform import \
+    AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import NADReceiverCoordinator
@@ -24,13 +22,13 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the NAD Receiver switch."""
-    #------------START-----------------
+    # ------------START-----------------
     # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
     #   Alles, was über Volume, Mute und Inputs hinausgeht,
     #   wird über den Controller der Zone "Main" abgehandelt
-    #coordinator: NADReceiverCoordinator = config_entry.runtime_data
+    # coordinator: NADReceiverCoordinator = config_entry.runtime_data
     coordinator: NADReceiverCoordinator = config_entry.runtime_data["Main"]
-    #-------------END-----------------
+    # -------------END-----------------
 
     # Fetch initial data so we have data when entities subscribe
     await coordinator.async_config_entry_first_refresh()
@@ -85,21 +83,21 @@ async def async_setup_entry(
         #     entity_registry_enabled_default=False,
         # ),
         # SwitchEntityDescription(
-        #     key="Main.Speaker.Sub", 
+        #     key="Main.Speaker.Sub",
         #     name="Subwoofer"
         # ),
         # SwitchEntityDescription(
-        #     key="Main.SpeakerA", 
-        #     name="Speakers A", 
+        #     key="Main.SpeakerA",
+        #     name="Speakers A",
         #     icon="mdi:speaker-multiple"
         # ),
         # SwitchEntityDescription(
-        #     key="Main.SpeakerB", 
-        #     name="Speakers B", 
+        #     key="Main.SpeakerB",
+        #     name="Speakers B",
         #     icon="mdi:speaker-multiple"
         # ),
         # SwitchEntityDescription(
-        #     key="Main.ToneDefeat", 
+        #     key="Main.ToneDefeat",
         #     name="Tone Defeat"
         # ),
         # SwitchEntityDescription(
@@ -114,9 +112,9 @@ async def async_setup_entry(
 
     for entity_description in entity_descriptions:
         if coordinator.supports_command(entity_description.key):
-            #-----------------------------
+            # -----------------------------
             # Nutze passenden Coordinator (Main sollte i.d.R passen)
-            #-----------------------------
+            # -----------------------------
             # entities.append(NADReceiverSelect(coordinators["Main"], entity_description))
             entities.append(NADReceiverSwitch(coordinator, entity_description))
 

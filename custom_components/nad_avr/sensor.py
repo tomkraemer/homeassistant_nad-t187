@@ -1,16 +1,14 @@
 import logging
 
 from homeassistant.components.media_player.const import MediaPlayerState
-from homeassistant.components.sensor import (
-    SensorDeviceClass,
-    SensorEntity,
-    SensorEntityDescription,
-    SensorStateClass,
-)
+from homeassistant.components.sensor import (SensorDeviceClass, SensorEntity,
+                                             SensorEntityDescription,
+                                             SensorStateClass)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import EntityCategory
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.entity_platform import \
+    AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import NADReceiverCoordinator
@@ -25,13 +23,13 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the NAD Receiver sensor."""
-    #------------START-----------------
+    # ------------START-----------------
     # [v1.0.0][FEATURE: Zwei Coordinator-Instanzen]
     #   Alles, was über Volume, Mute und Inputs hinausgeht,
     #   wird über den Controller der Zone "Main" abgehandelt
-    #coordinator: NADReceiverCoordinator = config_entry.runtime_data
+    # coordinator: NADReceiverCoordinator = config_entry.runtime_data
     coordinator: NADReceiverCoordinator = config_entry.runtime_data["Main"]
-    #-------------END-----------------
+    # -------------END-----------------
 
     # Fetch initial data so we have data when entities subscribe
     await coordinator.async_config_entry_first_refresh()
@@ -80,10 +78,10 @@ async def async_setup_entry(
 
     for entity_description in entity_descriptions:
         if coordinator.supports_command(entity_description.key):
-            #-----------------------------
+            # -----------------------------
             # Nutze passenden Coordinator (Main sollte i.d.R passen)
-#            entities.append(NADReceiverSelect(coordinators["Main"], entity_description))
-            #-----------------------------
+            #            entities.append(NADReceiverSelect(coordinators["Main"], entity_description))
+            # -----------------------------
             entities.append(NADReceiverSensor(coordinator, entity_description))
 
     async_add_entities(entities)
@@ -118,9 +116,8 @@ class NADReceiverSensor(CoordinatorEntity, SensorEntity):
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
 
-        if (
-            self.coordinator.data 
-            and (new_value := self.coordinator.data.get(self.entity_description.key))
+        if self.coordinator.data and (
+            new_value := self.coordinator.data.get(self.entity_description.key)
         ):
             self._attr_native_value = new_value
             self._attr_available = True

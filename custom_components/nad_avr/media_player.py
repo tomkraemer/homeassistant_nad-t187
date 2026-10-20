@@ -1,38 +1,32 @@
 """Support for interfacing with NAD receivers through RS-232."""
 
-import logging, time
+import logging
 import os
-import requests
+import time
 
+import requests
 from aiodiscover.discovery import _LOGGER
-from homeassistant.components.media_player import (
-    MediaPlayerDeviceClass,
-    MediaPlayerEntity,
-    MediaPlayerEntityFeature,
-    MediaPlayerState,
-)
+from homeassistant.components.media_player import (MediaPlayerDeviceClass,
+                                                   MediaPlayerEntity,
+                                                   MediaPlayerEntityFeature,
+                                                   MediaPlayerState)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_TYPE
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.entity_platform import \
+    AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-
+from . import NADReceiverCoordinator, log_status_dict
+from .const import (CONF_DEFAULT_MAX_VOLUME, CONF_DEFAULT_MIN_VOLUME,
+                    CONF_DEFAULT_VOLUME_STEP, CONF_MAX_VOLUME, CONF_MIN_VOLUME,
+                    DOMAIN)
 from .NADReceiver import NADReceiverSerial, NADReceiverTCP, NADReceiverTelnet
 
-from . import NADReceiverCoordinator, log_status_dict
-from .const import (
-    CONF_DEFAULT_MAX_VOLUME,
-    CONF_DEFAULT_MIN_VOLUME,
-    CONF_DEFAULT_VOLUME_STEP,
-    CONF_MAX_VOLUME,
-    CONF_MIN_VOLUME,
-    DOMAIN,
-)
-
 _LOGGER = logging.getLogger(__name__)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -49,28 +43,26 @@ async def async_setup_entry(
 
     if isinstance(coordinators["Main"].receiver, NADReceiverTCP):
         async_add_entities([NADtcp(coordinators["Main"])])
-    elif (
-        isinstance(coordinators["Main"].receiver, NADReceiverTelnet) or 
-        isinstance(coordinators["Main"].receiver, NADReceiverSerial
-    )
+    elif isinstance(coordinators["Main"].receiver, NADReceiverTelnet) or isinstance(
+        coordinators["Main"].receiver, NADReceiverSerial
     ):
-        async_add_entities([
-            NADMain(coordinators["Main"]),          # ✅ Main-Entity nutzt Main-Coordinator
-            NADZone2(coordinators["Zone2"]),        # ✅ Zone2-Entity nutzt Zone2-Coordinator
-        ])
+        async_add_entities(
+            [
+                NADMain(coordinators["Main"]),  # ✅ Main-Entity nutzt Main-Coordinator
+                NADZone2(
+                    coordinators["Zone2"]
+                ),  # ✅ Zone2-Entity nutzt Zone2-Coordinator
+            ]
+        )
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the integration."""
     local_www = hass.config.path(f"custom_components/{DOMAIN}/www")
-    
+
     if os.path.isdir(local_www):
         # Macht den Ordner unter http://deine-hass-ip:8123/local/deine_integration/ verfügbar
-        hass.http.register_static_path(
-            f"/local/{DOMAIN}",
-            local_www,
-            rue
-        )
+        hass.http.register_static_path(f"/local/{DOMAIN}", local_www, rue)
         _LOGGER.info("Source-PNGs erfolgreich für das Frontend freigegeben.")
     else:
         _LOGGER.error(f"Der www-Ordner wurde unter {local_www} nicht gefunden!")
@@ -95,9 +87,15 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
         super().__init__(coordinator, self.zone + ".Power")
 
         self._attr_device_info = coordinator.device_info
-        self._attr_unique_id = (f"{coordinator.unique_id}-mediaplayer-{self.zone.lower()}")
-        self._min_volume = coordinator.options.get(CONF_MIN_VOLUME, CONF_DEFAULT_MIN_VOLUME)
-        self._max_volume = coordinator.options.get(CONF_MAX_VOLUME, CONF_DEFAULT_MAX_VOLUME)
+        self._attr_unique_id = (
+            f"{coordinator.unique_id}-mediaplayer-{self.zone.lower()}"
+        )
+        self._min_volume = coordinator.options.get(
+            CONF_MIN_VOLUME, CONF_DEFAULT_MIN_VOLUME
+        )
+        self._max_volume = coordinator.options.get(
+            CONF_MAX_VOLUME, CONF_DEFAULT_MAX_VOLUME
+        )
 
         self._add_listener_for_media_player(coordinator, "Power")
         self._add_listener_for_media_player(coordinator, "Mute")
@@ -111,14 +109,18 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
         _LOGGER.info("NAD MediaPlayer %s initialized and ready", self.zone)
 
     @property
-    def should_poll (self) -> bool:  #möglicherweise überflüssig, aber doppelt gemoppelt hält besser.
-        """ Kein Pollinng für NAD-MediaPlayer """
+    def should_poll(
+        self,
+    ) -> bool:  # möglicherweise überflüssig, aber doppelt gemoppelt hält besser.
+        """Kein Pollinng für NAD-MediaPlayer"""
         return False
 
-    def _add_listener_for_media_player (self, coordinator: NADReceiverCoordinator, cmd) -> None:
+    def _add_listener_for_media_player(
+        self, coordinator: NADReceiverCoordinator, cmd
+    ) -> None:
         """
-        Add MediaPlayer-specific listener command 
-        (here: Mute, Volume, Source 
+        Add MediaPlayer-specific listener command
+        (here: Mute, Volume, Source
         [- and ListeningMode <- for Main only -] )
         """
         command = self.zone + "." + cmd
@@ -142,16 +144,20 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
         if self.coordinator.receiver.available:
             # Der Receiver hat den vollständigen Status des AVR immer parar.
             # den nutzen wir:
-            data =  self.coordinator.receiver.data
+            data = self.coordinator.receiver.data
 
-            self._attr_available        = True
-            self._attr_state            = data.get(self.zone + ".Power")
+            self._attr_available = True
+            self._attr_state = data.get(self.zone + ".Power")
 
-            self._attr_is_volume_muted  = (data.get(self.zone + ".Mute", "").lower() == "on")
-            self._attr_volume_level     = self.calc_volume(data.get(self.zone + ".Volume"))
-            self._attr_source           = self._source_dict.get(int(data.get(self.zone + ".Source")))
+            self._attr_is_volume_muted = (
+                data.get(self.zone + ".Mute", "").lower() == "on"
+            )
+            self._attr_volume_level = self.calc_volume(data.get(self.zone + ".Volume"))
+            self._attr_source = self._source_dict.get(
+                int(data.get(self.zone + ".Source"))
+            )
 
-        # self.async_write_ha_state() 
+        # self.async_write_ha_state()
         # wird von den abgeleiteten Klassen Main und ZoneX mit ff. Methoden-Aufbau übernommen:
         #     # @callback
         #     # def _handle_coordinator_update(self) -> None:
@@ -172,54 +178,53 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
         return self.coordinator.last_update_success
 
     def turn_off(self) -> None:
-        """ Implementaion of MediaPlayerEntityFeature:
-            Turn the media player off.   -  """
+        """Implementaion of MediaPlayerEntityFeature:
+        Turn the media player off.   -"""
         self.coordinator.write_command(self.zone + ".Power", "=", "Off")
 
     def turn_on(self) -> None:
-        """ Implementaion of MediaPlayerEntityFeature:
-            Turn the media player on"""
+        """Implementaion of MediaPlayerEntityFeature:
+        Turn the media player on"""
         self.coordinator.write_command(self.zone + ".Power", "=", "On")
 
     def volume_up(self) -> None:
-        """ Implementaion of MediaPlayerEntityFeature:
-            Volume up the media player."""
+        """Implementaion of MediaPlayerEntityFeature:
+        Volume up the media player."""
         self.coordinator.write_command(self.zone + ".Volume", "+", None)
 
     def volume_down(self) -> None:
-        """ Implementaion of MediaPlayerEntityFeature:
-            Volume down the media player."""
+        """Implementaion of MediaPlayerEntityFeature:
+        Volume down the media player."""
         self.coordinator.write_command(self.zone + ".Volume", "-", None)
 
     def set_volume_level(self, volume: float) -> None:
-        """ Implementaion of MediaPlayerEntityFeature:
-            Set volume level, range 0..1."""
+        """Implementaion of MediaPlayerEntityFeature:
+        Set volume level, range 0..1."""
         vol_db = int(self.calc_db(volume))
         self.coordinator.write_command(self.zone + ".Volume", "=", vol_db)
 
     def mute_volume(self, mute: bool) -> None:
-        """ Implementaion of MediaPlayerEntityFeature:
-            Mute (true) or unmute (false) media player."""
+        """Implementaion of MediaPlayerEntityFeature:
+        Mute (true) or unmute (false) media player."""
         if mute:
             self.coordinator.write_command(self.zone + ".Mute", "=", "On")
         else:
             self.coordinator.write_command(self.zone + ".Mute", "=", "Off")
 
     def select_source(self, source: str) -> None:
-        """ Implementaion of MediaPlayerEntityFeature:
-            Select input source."""
+        """Implementaion of MediaPlayerEntityFeature:
+        Select input source."""
         if source in self._reverse_mapping:
             source_id = self._reverse_mapping[source]
         elif source.isnumeric() and int(source) in self._source_dict:
             source_id = source
         else:
-            raise HomeAssistantError(f"Source {source} invalid")      
+            raise HomeAssistantError(f"Source {source} invalid")
         self.coordinator.write_command(self.zone + ".Source", "=", source_id)
 
     @property
     def media_image_url(self) -> str | None:
-        """Gibt dynamisch das Bild passend zur aktiven Quelle zurück.
-        """
+        """Gibt dynamisch das Bild passend zur aktiven Quelle zurück."""
         source_name = self._attr_source.lower()
         source_name = source_name.replace(" ", "-")
         # path = f"./wwww/{source_name}.png"
@@ -244,11 +249,11 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
 
         # _LOGGER.debug("Source: %s FileName: %s Path: %s URL:%s", self._attr_source, source_name, path, url)
 
-        # WICHTIG: Füge einen Zeitstempel an (?v=12345678), 
+        # WICHTIG: Füge einen Zeitstempel an (?v=12345678),
         # damit der Browser das Bild bei einem Quellenwechsel garantiert neu lädt!
         timestamp = int(time.time())
         return f"{url}?v={timestamp}"
-    
+
     @property
     def source_list(self):
         """List of available input sources."""
@@ -269,6 +274,7 @@ class NAD(CoordinatorEntity, MediaPlayerEntity):
         return self._min_volume + round(
             abs(self._min_volume - self._max_volume) * volume
         )
+
 
 #####################################################################################
 #   IMPLEMENTING TWO MEDIA PLAYER. ONE FOR EACH ZONE
@@ -318,16 +324,17 @@ class NADMain(NAD):
         listeningMode = data.get(self.zone + ".ListeningMode")
         if listeningMode is not None:
             self._attr_sound_mode = listeningMode
-            
+
         self.schedule_update_ha_state()
 
     def select_sound_mode(self, sound_mode: str) -> None:
-        """Select sound mode.   - Implementaion of MediaPlayerEntityFeature """
+        """Select sound mode.   - Implementaion of MediaPlayerEntityFeature"""
         self.coordinator.write_command(self.zone + ".ListeningMode", "=", sound_mode)
 
 
 class NADZone2(NAD):
     """Representation of a NAD Receiver - Zone 2."""
+
     _attr_name = "Zone 2"
     _attr_supported_features = (
         MediaPlayerEntityFeature.VOLUME_SET
@@ -350,5 +357,6 @@ class NADZone2(NAD):
         super()._handle_coordinator_update()
         self.schedule_update_ha_state()
 
+
 class NADtcp(NAD):
-    """Dummy Representation of a NAD Receiver via tcp - why so ever """
+    """Dummy Representation of a NAD Receiver via tcp - why so ever"""

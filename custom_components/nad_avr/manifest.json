@@ -3,12 +3,12 @@
   "name": "NAD AVR",
   "codeowners": ["@tomkraemer"],
   "config_flow": true,
+  "dependencies": ["http"],
   "documentation": "https://codeberg.org/tomkraemer/homeassistant_nad-t187",
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://codeberg.org/tomkraemer/homeassistant_nad-t187/issues",
   "loggers": ["nad_receiver"],
   "requirements": [],
-  "dependencies": ["http"],
   "version": "1.0.2"
 }

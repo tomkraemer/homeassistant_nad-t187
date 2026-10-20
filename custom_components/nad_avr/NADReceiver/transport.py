@@ -3,21 +3,24 @@
 Includes FIFO queue with timestamps and background reader for async response handling.
 """
 
-import serial
-import threading
-from telnetlib3.telnetlib import Telnet
-from datetime import datetime
-from typing import Optional, Protocol, runtime_checkable 
 import logging
+import threading
 import time
+from datetime import datetime
+from typing import Optional, Protocol, runtime_checkable
+
+import serial
+from telnetlib3.telnetlib import Telnet
+
 from .. import const
-from typing import Protocol
 
 _LOGGER = logging.getLogger(__name__)
 
-class NADTransport():
+
+class NADTransport:
     """Basis-Klasse für alle NAD-Transport-Klassen."""
-    def __init__(self, receiver: NADReceiever, timeout: int ) -> None:
+
+    def __init__(self, receiver: NADReceiever, timeout: int) -> None:
         """Create Telnet connection."""
         self.channel = None
         self.receiver = receiver
@@ -31,28 +34,26 @@ class NADTransport():
 
     ####################################################################################
     # Die Kombination aus _reader_loop und _read_reponse ist Herz der Verbindung zum AVR.
-    #   Es wird kontinierlich am Socket gelauscht. 
+    #   Es wird kontinierlich am Socket gelauscht.
     #       Wird in _readResponse ein EndeToken "\n" im Stream gefunden,
-    #       wird der gesammlete String decoded, danach 
-    #       wird das Lesen zunächst unterbochen, indem 
-    #       der String an _reader_loop zurückgegeben wird 
-    #   _readser_loop gibt das Lesergebnis an den angemeldeten Receiver, 
+    #       wird der gesammlete String decoded, danach
+    #       wird das Lesen zunächst unterbochen, indem
+    #       der String an _reader_loop zurückgegeben wird
+    #   _readser_loop gibt das Lesergebnis an den angemeldeten Receiver,
     #       damit dieser aus dem String ein Update seines Status vornimmt.
     #   danach wird weiter gelauscht
-    
 
     #############################################################################
     # CONNECTION HANDLING
     #       - Open
     #       - Close
     def open_connection(self) -> None:
-        """PROTOTYPE: to be implemented in derived class.
-        """
+        """PROTOTYPE: to be implemented in derived class."""
         pass
 
     def close_connection(self) -> None:
         """
-            close a typed connection.
+        close a typed connection.
         """
         if self.channel:
             self.channel.close()
@@ -65,7 +66,7 @@ class NADTransport():
     #       - Exec
     def write_command(self, cmd: str) -> None:
         """
-            Write a command to the telnet connection.
+        Write a command to the telnet connection.
         """
         if not self.channel:
             self.open_connection()
@@ -78,14 +79,14 @@ class NADTransport():
 
     def _read_response(self) -> str:
         """
-            Read a single response from the telnet connection.
+        Read a single response from the telnet connection.
         """
         if not self.channel:
             self.open_connection()
         if not self.channel:
             return ""
         try:
-            with self.lock: 
+            with self.lock:
                 # read the next line from telenet-stream if avy available
                 rsp = self.channel.read_until(b"\n", self.timeout)
                 # if  rsp.strip().decode() == "" or rsp == self._last_line:
@@ -104,10 +105,10 @@ class NADTransport():
 
     def exec_command(self, cmd: str) -> str:
         """
-            Write a command to the telnet connection.
-            Read the respone following this format
-                <command> = <result>
-            return its result only
+        Write a command to the telnet connection.
+        Read the respone following this format
+            <command> = <result>
+        return its result only
         """
         self.write_command(cmd)
         line = self._read_response()
@@ -116,8 +117,8 @@ class NADTransport():
             # _LOGGER.debug("Line received @ %s: %s", self.connection_type, line)
             return line.split("=", 1)[1]
         else:
-            return ''
-        
+            return ""
+
     #############################################################################
     # READER LOOP
     #       - Start
@@ -125,22 +126,19 @@ class NADTransport():
     #       - Loop
     def start_reader(self) -> None:
         """
-            Start background reader thread.
+        Start background reader thread.
         """
         if self._reader_thread is not None and self._reader_thread.is_alive():
             return
-        
+
         self._stop_reading = False
-        self._reader_thread = threading.Thread(
-            target=self._reader_loop,
-            daemon=True
-        )
+        self._reader_thread = threading.Thread(target=self._reader_loop, daemon=True)
         self._reader_thread.start()
         # _LOGGER.debug("Started %s reader thread", self.connection_type)
 
     def stop_reader(self) -> None:
         """
-            Stop background reader thread.
+        Stop background reader thread.
         """
         self._stop_reading = True
         if self._reader_thread and self._reader_thread.is_alive():
@@ -150,14 +148,14 @@ class NADTransport():
 
     def _reader_loop(self) -> None:
         """
-            Continuous reader loop.
+        Continuous reader loop.
         """
         # _LOGGER.debug("Telnet reader loop started ")
         while not self._stop_reading:
             try:
                 line = self._read_response()
                 if line:
-                    with self.lock: 
+                    with self.lock:
                         self.receiver.update_status_data(line)
             except Exception as e:
                 _LOGGER.info("Reader error: %s", e)
@@ -169,13 +167,19 @@ class SerialPortTransport(NADTransport):
     """
     Transport for NAD protocol over RS-232.
     """
-    def __init__(self, receiver: NADReceiever, serial_port: str, timeout: int = const.CONF_DEFAULT_TIMEOUT):
+
+    def __init__(
+        self,
+        receiver: NADReceiever,
+        serial_port: str,
+        timeout: int = const.CONF_DEFAULT_TIMEOUT,
+    ):
         """Create RS232 connection."""
         super().__init__(receiver, timeout)
         self.channel: Optional[serial.Serial] = None
         self.port = serial_port
         self.baudrate = 115200
-        self.connection_type= const.CONF_TYPE_SERIAL
+        self.connection_type = const.CONF_TYPE_SERIAL
 
     def open_connection(self) -> None:
         if self.channel:
@@ -191,19 +195,24 @@ class SerialPortTransport(NADTransport):
         self.available = True
 
 
-
-
 class TelnetTransport(NADTransport):
     """
     Transport for NAD protocol over Telnet.
     """
-    def __init__(self, receiver: NADReceiever, host: str, port: int, timeout: int = const.CONF_DEFAULT_TIMEOUT) -> None:
+
+    def __init__(
+        self,
+        receiver: NADReceiever,
+        host: str,
+        port: int,
+        timeout: int = const.CONF_DEFAULT_TIMEOUT,
+    ) -> None:
         """Create Telnet connection."""
         super().__init__(receiver, timeout)
         self.channel: Optional[Telnet] = None
         self.host = host
         self.port = port
-        self.connection_type= const.CONF_TYPE_TELNET
+        self.connection_type = const.CONF_TYPE_TELNET
 
     def _pre_read(self) -> bool:
         # On initial connection
@@ -235,14 +244,19 @@ class TelnetTransport(NADTransport):
         self.available = True
 
 
-
 class TCPTransport:
     """
     Transport for NAD protocol over Telnet.
     """
-    def __init__(self, receiver: NADReceiever, host: str, port: int, timeout: int = const.CONF_DEFAULT_TIMEOUT) -> None:
-        """Create TCP connection."""
 
+    def __init__(
+        self,
+        receiver: NADReceiever,
+        host: str,
+        port: int,
+        timeout: int = const.CONF_DEFAULT_TIMEOUT,
+    ) -> None:
+        """Create TCP connection."""
 
         self.receiver = receiver
         self.channel: Optional[TCPTransport] = None
@@ -254,4 +268,4 @@ class TCPTransport:
         self._reader_thread: Optional[threading.Thread] = None
         self._stop_reading = False
         self._last_line = ""
-        self.connection_type= const.CONF_TYPE_TCP
+        self.connection_type = const.CONF_TYPE_TCP
